@@ -27,7 +27,7 @@ public class App
         try {
 
             // reads the file
-            FileReader fileReader = new FileReader(System.getProperty("user.dir") + "/src/main/resources/users-small.json");
+            FileReader fileReader = new FileReader(System.getProperty("user.dir") + "/data-import/src/main/resources/users-small.json");
             JsonReader jsonReader = new JsonReader(fileReader);
             JsonParser parser = new JsonParser();
             JsonObject obj = parser.parse(jsonReader).getAsJsonObject();
@@ -39,8 +39,8 @@ public class App
 
             // Creates the index if it hasn't been created
             // Uncomment if you want to create the index
-            // CreateIndexRequest request = new CreateIndexRequest("lastfm-users");
-            // client.indices().create(request);
+//             CreateIndexRequest request1 = new CreateIndexRequest("lastfm-users");
+//             client.indices().create(request1);
 
             JsonArray data = obj.get("data").getAsJsonArray();
             for (int i = 0 ; i < data.size(); i++) {
