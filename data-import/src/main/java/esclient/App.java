@@ -27,7 +27,7 @@ public class App
         try {
 
             // reads the file
-            FileReader fileReader = new FileReader(System.getProperty("user.dir") + "/src/main/resources/users-small.json");
+            FileReader fileReader = new FileReader(System.getProperty("user.dir") + "/data-import/src/main/resources/users-small.json");
             JsonReader jsonReader = new JsonReader(fileReader);
             JsonParser parser = new JsonParser();
             JsonObject obj = parser.parse(jsonReader).getAsJsonObject();
