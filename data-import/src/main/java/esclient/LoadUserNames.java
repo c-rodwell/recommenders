@@ -13,11 +13,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.FileReader;
 
-/**
- * Hello world!
- *
- */
-public class App
+public class LoadUserNames
 {
 
     public static void main( String[] args )
@@ -39,8 +35,8 @@ public class App
 
             // Creates the index if it hasn't been created
             // Uncomment if you want to create the index
-//             CreateIndexRequest request1 = new CreateIndexRequest("lastfm-users");
-//             client.indices().create(request1);
+            CreateIndexRequest request1 = new CreateIndexRequest("lastfm-users");
+            client.indices().create(request1);
 
             JsonArray data = obj.get("data").getAsJsonArray();
             for (int i = 0 ; i < data.size(); i++) {
