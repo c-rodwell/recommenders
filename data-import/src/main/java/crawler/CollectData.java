@@ -37,6 +37,7 @@ public class CollectData {
     private static final String ES_INDEX = "users";
     private static final String ES_TYPE = "user";
 
+    private static final String USERS_FILE = "users-small.json";
     private static final String APIKey = "685a323d182636518e80a296f620c8a2";
 
     public static void main(String[] args) {
@@ -65,6 +66,7 @@ public class CollectData {
         // Delete existing index
         if (isIndexExists) {
             try {
+                LOG.info("Deleting existing " + ES_INDEX + " index..");
                 DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(ES_INDEX);
                 DeleteIndexResponse deleteIndexResponse = hClient.indices().delete(deleteIndexRequest);
                 LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
@@ -75,7 +77,7 @@ public class CollectData {
 
         // Create Elasticsearch index
         try {
-            LOG.info("Creating Elasticsearch index...");
+            LOG.info("Creating new Elasticsearch index: " + ES_INDEX);
             CreateIndexRequest createIndexRequest = new CreateIndexRequest(ES_INDEX);
             hClient.indices().create(createIndexRequest);
         } catch (IOException e) {
@@ -88,8 +90,8 @@ public class CollectData {
         // Read the usernames
         try {
             LOG.info("Loading usernames and tracks' data for each user...");
-            FileReader fileReader = new FileReader(System.getProperty("user.dir") + "/data-import/src/main/resources/users-small.json");
-            JsonReader jsonReader = new JsonReader(fileReader);
+            InputStream is = CollectData.class.getClassLoader().getResourceAsStream(USERS_FILE);
+            JsonReader jsonReader = new JsonReader(new InputStreamReader(is));
 
             JsonParser parser = new JsonParser();
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
@@ -111,7 +113,7 @@ public class CollectData {
                 }
             }
 
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             LOG.error("Exception while loading usernames: " + e.getMessage());
         }
 
