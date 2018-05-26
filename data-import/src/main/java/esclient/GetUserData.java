@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import main.java.de.umass.lastfm.User;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -23,11 +24,16 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
+
+//try to import lastfm-java methods
+//import lastfm-java-master.*;
 
 public class GetUserData {
 //make user data index in elasticsearch , using usernames from elasticsearch and data from last.fm api
     public static int USERS_SIZE = 1000;
-    public static String aggr_name = "unique users";
+    public static String aggr_name = "unique_users";
     public static String namesFile = "lastfm-users-small";
     public static String userDataFile = "lastfm-userdata-test";
 
@@ -45,8 +51,8 @@ public class GetUserData {
 //            elasticClient.indices().create(request1);
 
 
-            //request to get users is:
-
+            //get users from elasticsearch.
+            // request to get users is:
 //    {
 //        "size" : 0,
 //            "aggs" : {
@@ -59,29 +65,30 @@ public class GetUserData {
 //    }
 //    }
 
-//            JsonObject getusersObj = new JsonObject();
-//            getusersObj.addProperty("size",0);
-//            JsonObject aggs = new JsonObject();
-//            JsonObject distinctUsers = new JsonObject();
-//            JsonObject terms = new JsonObject();
-//            terms.addProperty("field", "username");
-//            terms.addProperty("size", "1000");
-//            distinctUsers.add("terms", terms);
-//            aggs.add("distinct_users", distinctUsers);
-//            getusersObj.add("aggs", aggs);
-
             SearchSourceBuilder namesRequestBuilder = new SearchSourceBuilder();
             namesRequestBuilder.size(0);
             TermsAggregationBuilder aggregationBuilder = AggregationBuilders.terms(aggr_name).field("username").size(USERS_SIZE);
             namesRequestBuilder.aggregation(aggregationBuilder);
 
             SearchRequest getNamesRequest = new SearchRequest(namesFile);
-            getNamesRequest.types("doc");
             getNamesRequest.source(namesRequestBuilder);
             SearchResponse namesResponse = elasticClient.search(getNamesRequest);
 
             Aggregations resp_aggr = namesResponse.getAggregations();
             Terms resp_terms = resp_aggr.get(aggr_name);
+            ArrayList<String> names = new ArrayList<String>();
+            for (Terms.Bucket b: resp_terms.getBuckets()){
+                names.add(b.getKeyAsString());
+            }
+            int results_count = names.size();
+            //do we need to make sure it got all the users? it will only get USERS_SIZE of them in one go
+
+            User user = new User();
+
+            for (String name: names){
+
+
+            }
 
 //            JsonArray data = obj.get("data").getAsJsonArray();
 //            for (int i = 0 ; i < data.size(); i++) {
