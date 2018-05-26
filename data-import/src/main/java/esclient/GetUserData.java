@@ -33,11 +33,13 @@ import de.umass.lastfm.User;
 public class GetUserData {
 //make user data index in elasticsearch , using usernames from elasticsearch and data from last.fm api
     public static int USERS_SIZE = 1000;
+    public static int TOPTRACKS_SIZE = 100;
+
     public static String aggr_name = "unique_users";
     public static String namesFile = "lastfm-users-small";
     //public static String userDataFile = "lastfm-userdata-test";
-    public static String tracksByUserFile = "lastfm-usertracks-test";
-    public static String tagsByTrackFile = "lastfm-tracktags-test";
+    public static String tracksByUserFile = "lastfm-usertracks-test2";
+    public static String tagsByTrackFile = "lastfm-tracktags-test2";
 
     //my last-fm info:
 //    Application name	recommender
@@ -57,9 +59,8 @@ public class GetUserData {
 
             // Creates the index if it hasn't been created
             // Uncomment if you want to create the index
-
-            //elasticClient.indices().create(new CreateIndexRequest(tracksByUserFile));
-            //elasticClient.indices().create(new CreateIndexRequest(tagsByTrackFile));
+            elasticClient.indices().create(new CreateIndexRequest(tracksByUserFile));
+            elasticClient.indices().create(new CreateIndexRequest(tagsByTrackFile));
 
             //get users from elasticsearch.
             // request to get users is:
@@ -100,7 +101,7 @@ public class GetUserData {
             for (String name: names){
                 topTracks = User.getTopTracks(name, APIKey);
                 for (Track t: topTracks){
-                    tracksInSet.add(t); //does this get unique tracks, or will it repeat tracks for different users?
+                    //tracksInSet.add(t); //does this get unique tracks, or will it repeat tracks for different users?
                     JsonObject esObj = new JsonObject();
                     esObj.addProperty("username", name);
                     esObj.addProperty("trackname", t.getName());
