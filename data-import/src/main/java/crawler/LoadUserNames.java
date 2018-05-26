@@ -1,4 +1,4 @@
-package esclient;
+package crawler;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
