@@ -3,6 +3,7 @@ package crawler;
 import com.google.gson.JsonObject;
 import de.umass.lastfm.Track;
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
