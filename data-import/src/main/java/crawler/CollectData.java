@@ -8,6 +8,8 @@ import com.google.gson.stream.JsonReader;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -23,6 +25,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -31,8 +34,11 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+//import sun.net.www.http.HttpClient;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -115,21 +121,23 @@ public class CollectData {
 
         //make vectors for tracks
 
-        try {
-            for (String mid : trackIds){
+
+        for (String mid : trackIds){
+            if (mid == ""){ continue;}
+            try {
                 int[] listenArray = new int[usersToInts.size()];
 
-//                SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-//                sourceBuilder.query(QueryBuilders.termQuery("user", "kimchy"));
-//                sourceBuilder.from(0);
-//                sourceBuilder.size(5);
-//                sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
+    //                SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+    //                sourceBuilder.query(QueryBuilders.termQuery("user", "kimchy"));
+    //                sourceBuilder.from(0);
+    //                sourceBuilder.size(5);
+    //                sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
 
 
                 //query for the track id
                 SearchRequest userTracksRequest = new SearchRequest(ES_INDEX);
                 SearchSourceBuilder tracksRequestBuilder = new SearchSourceBuilder();
-                tracksRequestBuilder.query(QueryBuilders.termQuery(ES_trackid, mid));
+                tracksRequestBuilder.query(QueryBuilders.termQuery("_source."+ES_trackid, mid));
                 tracksRequestBuilder.from(0);
                 tracksRequestBuilder.size(100);
                 tracksRequestBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
@@ -137,25 +145,34 @@ public class CollectData {
                 SearchResponse namesResponse = hClient.search(userTracksRequest);
                 SearchHits hits = namesResponse.getHits();
                 SearchHit[] hitsArr = hits.getHits();
+
+                URL url = new URL("http://localhost:9200/users/_search?q="+ES_trackid+":"+mid);
+                //HttpClient client = HttpClient.New(url);
+                //HttpRequest req =
+                //HttpClient.New("http://localhost:9200/users/_search?q="+ES_trackid+":"+mid);
+
+                //URL url = new URL("http://example.com");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("Content-Type", "application/json");
+                InputStream responsestream = connection.getInputStream();
+
+
                 //fill the array
-                for (SearchHit hit : hitsArr){
-                    String username = hit.field(ES_username).getValue();
-                    String listencount = hit.field(ES_trackplaycount).getValue();
-                    listenArray[usersToInts.get(username)] = Integer.getInteger(listencount);
-                }
+    //                for (SearchHit hit : hitsArr){
+    //                    String username = hit.field(ES_username).getValue();
+    //                    String listencount = hit.field(ES_trackplaycount).getValue();
+    //                    listenArray[usersToInts.get(username)] = Integer.getInteger(listencount);
+    //                }
                 //put the array in elasticSearch
                 JsonObject esObj = new JsonObject();
                 esObj.addProperty(ES_trackid, mid);
                 esObj.addProperty(ES_listenvector, listenArray[0]); //I want to put all of listenarray but it doesn't allow vector
                 sendToESIndex(hClient, VECTOR_INDEX, esObj, 0);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
             }
-
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
         }
-
-
-
 
         LOG.info("Done crawling for data.");
 
