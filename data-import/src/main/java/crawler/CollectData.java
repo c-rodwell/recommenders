@@ -16,16 +16,25 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.*;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class CollectData {
 
@@ -37,8 +46,17 @@ public class CollectData {
     private static final String ES_INDEX = "users";
     private static final String ES_TYPE = "user";
 
+    private static final String ES_username = "username";
+    private static final String ES_trackname = "track_name";
+    private static final String ES_trackplaycount = "track_playcount";
+    private static final String ES_trackid = "track_mid";
+
+    private static final String VECTOR_INDEX = "trackvectors";
+    private static final String ES_listenvector = "listening_vector";
+
     private static final String USERS_FILE = "users-small.json";
     private static final String APIKey = "685a323d182636518e80a296f620c8a2";
+    private static final int USERS_SIZE = 5000;
 
     public static void main(String[] args) {
 
@@ -53,39 +71,15 @@ public class CollectData {
         // Low level client
         RestClient lClient = RestClient.builder(new HttpHost(ES_HOST, ES_PORT, SCHEME)).build();
 
-        // Check if index exists
-        boolean isIndexExists = false;
-        try {
-            Response response = lClient.performRequest("HEAD", "/" + ES_INDEX);
-            int statusCode = response.getStatusLine().getStatusCode();
-            isIndexExists = (statusCode == HttpStatus.SC_NOT_FOUND) ? false : true;
-        } catch (IOException e) {
-            LOG.info("Exception while checking if Elasticsearch index exists: " + e.getMessage());
-        }
-
-        // Delete existing index
-        if (isIndexExists) {
-            try {
-                LOG.info("Deleting existing " + ES_INDEX + " index..");
-                DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(ES_INDEX);
-                DeleteIndexResponse deleteIndexResponse = hClient.indices().delete(deleteIndexRequest);
-                LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
-            } catch (IOException e) {
-                LOG.info("Exception while deleting Elasticsearch index: " + e.getMessage());
-            }
-        }
-
-        // Create Elasticsearch index
-        try {
-            LOG.info("Creating new Elasticsearch index: " + ES_INDEX);
-            CreateIndexRequest createIndexRequest = new CreateIndexRequest(ES_INDEX);
-            hClient.indices().create(createIndexRequest);
-        } catch (IOException e) {
-            LOG.error("Exception while creating index: " + e.getMessage());
-        }
+        createNewIndex(lClient, hClient, ES_INDEX);
+        createNewIndex(lClient, hClient, VECTOR_INDEX);
 
         // Put mapping
         putMapping(lClient);
+
+        //map the unique users to ints, for making user listening vectors. will this get too big?
+        HashMap<String, Integer> usersToInts = new HashMap<>();
+        HashSet<String> trackIds = new HashSet<>();
 
         // Read the usernames
         try {
@@ -97,25 +91,71 @@ public class CollectData {
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
 
             int docId = 0;
-            for (int i = 0; i < data.size(); i++) {
+            for (int i = 0; i < 10; i++) { //should be i<data.size, shrink for testing later parts
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
+                usersToInts.put(username, i);
                 // Get top tracks for user
                 Collection<Track> topTracks = User.getTopTracks(username, APIKey);
                 for (Track t : topTracks){
                     JsonObject esObj = new JsonObject();
-                    esObj.addProperty("username", username);
-                    esObj.addProperty("track_name", t.getName());
-                    esObj.addProperty("track_playcount", t.getPlaycount());
-                    esObj.addProperty("track_mid", t.getMbid());
-                    sendObjToESIndex(hClient, esObj, docId);
+                    esObj.addProperty(ES_username, username);
+                    esObj.addProperty(ES_trackname, t.getName());
+                    esObj.addProperty(ES_trackplaycount, t.getPlaycount());
+                    esObj.addProperty(ES_trackid, t.getMbid());
+                    sendToESIndex(hClient, ES_INDEX, esObj, docId);
                     docId++;
+                    trackIds.add(t.getMbid());
                 }
             }
 
         } catch (Exception e) {
             LOG.error("Exception while loading usernames: " + e.getMessage());
         }
+
+        //make vectors for tracks
+
+        try {
+            for (String mid : trackIds){
+                int[] listenArray = new int[usersToInts.size()];
+
+//                SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+//                sourceBuilder.query(QueryBuilders.termQuery("user", "kimchy"));
+//                sourceBuilder.from(0);
+//                sourceBuilder.size(5);
+//                sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
+
+
+                //query for the track id
+                SearchRequest userTracksRequest = new SearchRequest(ES_INDEX);
+                SearchSourceBuilder tracksRequestBuilder = new SearchSourceBuilder();
+                tracksRequestBuilder.query(QueryBuilders.termQuery(ES_trackid, mid));
+                tracksRequestBuilder.from(0);
+                tracksRequestBuilder.size(100);
+                tracksRequestBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
+                userTracksRequest.source(tracksRequestBuilder);
+                SearchResponse namesResponse = hClient.search(userTracksRequest);
+                SearchHits hits = namesResponse.getHits();
+                SearchHit[] hitsArr = hits.getHits();
+                //fill the array
+                for (SearchHit hit : hitsArr){
+                    String username = hit.field(ES_username).getValue();
+                    String listencount = hit.field(ES_trackplaycount).getValue();
+                    listenArray[usersToInts.get(username)] = Integer.getInteger(listencount);
+                }
+                //put the array in elasticSearch
+                JsonObject esObj = new JsonObject();
+                esObj.addProperty(ES_trackid, mid);
+                esObj.addProperty(ES_listenvector, listenArray[0]); //I want to put all of listenarray but it doesn't allow vector
+                sendToESIndex(hClient, VECTOR_INDEX, esObj, 0);
+            }
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+
+
+
 
         LOG.info("Done crawling for data.");
 
@@ -131,10 +171,43 @@ public class CollectData {
 
     }
 
-    private static void sendObjToESIndex(RestHighLevelClient client, JsonObject esObj, int id) {
+    public static void createNewIndex(RestClient lClient, RestHighLevelClient hClient, String IndexName) {
+        // Check if index exists
+        boolean isIndexExists = false;
+        try {
+            Response response = lClient.performRequest("HEAD", "/" + IndexName);
+            int statusCode = response.getStatusLine().getStatusCode();
+            isIndexExists = (statusCode == HttpStatus.SC_NOT_FOUND) ? false : true;
+        } catch (IOException e) {
+            LOG.info("Exception while checking if Elasticsearch index exists: " + e.getMessage());
+        }
+
+        // Delete existing index
+        if (isIndexExists) {
+            try {
+                LOG.info("Deleting existing " + IndexName + " index..");
+                DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(IndexName);
+                DeleteIndexResponse deleteIndexResponse = hClient.indices().delete(deleteIndexRequest);
+                LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
+            } catch (IOException e) {
+                LOG.info("Exception while deleting Elasticsearch index: " + e.getMessage());
+            }
+        }
+
+        // Create Elasticsearch index
+        try {
+            LOG.info("Creating new Elasticsearch index: " + IndexName);
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest(IndexName);
+            hClient.indices().create(createIndexRequest);
+        } catch (IOException e) {
+            LOG.error("Exception while creating index: " + e.getMessage());
+        }
+    }
+
+    private static void sendToESIndex(RestHighLevelClient client, String index, JsonObject esObj, int id) {
         try {
             IndexRequest request = new IndexRequest(
-                    ES_INDEX,
+                    index,
                     ES_TYPE,
                     Integer.toString(id));
             request.source(esObj.toString(), XContentType.JSON);
@@ -143,6 +216,19 @@ public class CollectData {
             LOG.error("Exception while posting object to Elasticsearch index " + ES_INDEX + " : " + e.getMessage());
         }
     }
+
+//    private static void sendObjToESIndex(RestHighLevelClient client, JsonObject esObj, int id) {
+//        try {
+//            IndexRequest request = new IndexRequest(
+//                    ES_INDEX,
+//                    ES_TYPE,
+//                    Integer.toString(id));
+//            request.source(esObj.toString(), XContentType.JSON);
+//            client.index(request);
+//        } catch (IOException e) {
+//            LOG.error("Exception while posting object to Elasticsearch index " + ES_INDEX + " : " + e.getMessage());
+//        }
+//    }
 
     private static void putMapping(RestClient lClient) {
 
