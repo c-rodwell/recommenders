@@ -17,12 +17,13 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TrackVectors {
 
     private static final Logger LOG = Logger.getLogger(TrackVectors.class);
 
-    public static void createTrackVectors() throws IOException {
+    public static void createTrackVectors(HashMap<String, Integer> usersToInts) throws IOException {
 
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.size(0);
@@ -48,8 +49,15 @@ public class TrackVectors {
             SearchResponse response2 = HighClient.getInstance().getClient().search(request2);
             SearchHits hits = response2.getHits();
             JsonArray vector = new JsonArray();
+            //use userToInts passed as argument, created in loadUserTopTracks
+            //alternatives - pass it through elasticsearch, or create it here
+            int[] playCountArr = new int[usersToInts.size()];
             for (SearchHit hit : hits) {
                 int playCount = (int) hit.getSourceAsMap().get("track_playcount");
+                String username = (String) hit.getSourceAsMap().get("username");
+                playCountArr[usersToInts.get(username)] = playCount;
+            }
+            for (int playCount : playCountArr) {
                 System.out.println(playCount);
                 vector.add(playCount);
             }

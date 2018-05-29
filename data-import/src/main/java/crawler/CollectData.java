@@ -18,9 +18,10 @@ public class CollectData {
 
     private static final Logger LOG = Logger.getLogger(CollectData.class);
 
-    public static void loadUserTopTracks() {
+    public static HashMap<String, Integer>  loadUserTopTracks() {
 
         LOG.info("Loading usernames and tracks' data for each user...");
+        HashMap<String, Integer> usersToInts = new HashMap<>();
         try {
 
             // Read the usernames
@@ -31,9 +32,11 @@ public class CollectData {
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
 
             int docId = 0;
-            for (int i = 0; i < data.size(); i++) {
+            for (int i = 0; i < 50; i++) { //should be i<data.size() but make it smaller for test
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
+                //store the username
+                usersToInts.put(username, i);
                 // Get top tracks for user
                 Collection<Track> topTracks = User.getTopTracks(username, Constants.APIKey);
                 for (Track t : topTracks) {
@@ -50,7 +53,7 @@ public class CollectData {
         } catch (Exception e) {
             LOG.error("Exception while loading usernames: " + e.getMessage());
         }
-
+        return usersToInts;
     }
 
     public static Map<String, Object> getMapping() {
