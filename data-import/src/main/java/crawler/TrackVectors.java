@@ -17,6 +17,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TrackVectors {
 
@@ -24,10 +25,11 @@ public class TrackVectors {
 
     public static void createTrackVectors() throws IOException {
 
+        //get unique tracks from ES
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.size(0);
         TermsAggregationBuilder aggregationBuilder =
-                AggregationBuilders.terms("unique_tracks").field("track_mid").size(10);
+                AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.num_tracks);
         builder.aggregation(aggregationBuilder);
 
         SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
@@ -36,6 +38,25 @@ public class TrackVectors {
 
         Aggregations aggr = response.getAggregations();
         Terms resp_terms = aggr.get("unique_tracks");
+
+        //make hash of userids to ints for building the vector
+        HashMap<String, Integer> usersToInts = new HashMap<>();
+        SearchSourceBuilder user_builder = new SearchSourceBuilder();
+        user_builder.size(0);
+        TermsAggregationBuilder userAggregationBuilder =
+                AggregationBuilders.terms("unique_users").field("username").size(Constants.num_users);
+        user_builder.aggregation(userAggregationBuilder);
+        SearchRequest usersRequest = new SearchRequest(Constants.USERS_INDEX);
+        usersRequest.source(user_builder);
+        SearchResponse usersResponse = HighClient.getInstance().getClient().search(usersRequest);
+        Aggregations users_aggr = usersResponse.getAggregations();
+        Terms usersRespRerms = users_aggr.get("unique_users");
+        int userCount = 0;
+        for (Terms.Bucket b: usersRespRerms.getBuckets()) {
+            String username = b.getKeyAsString();
+            usersToInts.put(username.toLowerCase(), userCount);
+            userCount++;
+        }
 
         int docId = 0;
         for (Terms.Bucket b: resp_terms.getBuckets()){
@@ -48,8 +69,23 @@ public class TrackVectors {
             SearchResponse response2 = HighClient.getInstance().getClient().search(request2);
             SearchHits hits = response2.getHits();
             JsonArray vector = new JsonArray();
+
+            int[] playCountArr = new int[usersToInts.size()];
             for (SearchHit hit : hits) {
                 int playCount = (int) hit.getSourceAsMap().get("track_playcount");
+                String username = ((String) hit.getSourceAsMap().get("username")).toLowerCase();
+                int index = 0;
+                try{
+                    index = usersToInts.get(username);
+                    playCountArr[index] = playCount;
+                    //playCountArr[usersToInts.get(username)] = playCount;
+                } catch (NullPointerException e){
+                    System.out.println("exception for name: "+username+" -> index: "+index);
+                    System.out.println(e.getMessage());
+                    throw e;
+                }
+            }
+            for (int playCount : playCountArr) {
                 System.out.println(playCount);
                 vector.add(playCount);
             }
