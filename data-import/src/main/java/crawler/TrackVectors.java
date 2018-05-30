@@ -75,15 +75,7 @@ public class TrackVectors {
                 int playCount = (int) hit.getSourceAsMap().get("track_playcount");
                 String username = ((String) hit.getSourceAsMap().get("username")).toLowerCase();
                 int index = 0;
-                try{
-                    index = usersToInts.get(username);
-                    playCountArr[index] = playCount;
-                    //playCountArr[usersToInts.get(username)] = playCount;
-                } catch (NullPointerException e){
-                    System.out.println("exception for name: "+username+" -> index: "+index);
-                    System.out.println(e.getMessage());
-                    throw e;
-                }
+                    playCountArr[usersToInts.get(username)] = playCount;
             }
             for (int playCount : playCountArr) {
                 System.out.println(playCount);
