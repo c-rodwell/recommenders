@@ -39,6 +39,7 @@ public class CollectData {
                 for (Track t : topTracks) {
                     JsonObject esObj = new JsonObject();
                     esObj.addProperty("username", username);
+                    esObj.addProperty("user_index", i);
                     esObj.addProperty("track_name", t.getName());
                     esObj.addProperty("track_playcount", t.getPlaycount());
                     esObj.addProperty("track_mid", t.getMbid());
@@ -48,7 +49,7 @@ public class CollectData {
             }
 
         } catch (Exception e) {
-            LOG.error("Exception while loading usernames: " + e.getMessage());
+            LOG.error("Exception while loading users and tracks' data: " + e.getMessage());
         }
 
     }

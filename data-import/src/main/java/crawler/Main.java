@@ -10,11 +10,21 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        // populateUsersIndex();
-        populateTrackVectorsIndex();
+        final long startTime = System.currentTimeMillis();
 
+        populateUsersIndex();
+        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
+
+        populateTrackVectorsIndex();
+        LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
+
+        LOG.info("Closing ES clients...");
         HighClient.getInstance().close();
         LowClient.getInstance().close();
+        LOG.info("Done.");
+
+        final long endTime = System.currentTimeMillis();
+        System.out.println("Total execution time: " + ((endTime - startTime)/1000) + " seconds." );
 
     }
 
