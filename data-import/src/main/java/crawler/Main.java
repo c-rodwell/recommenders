@@ -10,7 +10,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        // populateUsersIndex();
+        populateUsersIndex();
         populateTrackVectorsIndex();
 
         HighClient.getInstance().close();

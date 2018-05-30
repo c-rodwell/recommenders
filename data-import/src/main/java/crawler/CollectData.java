@@ -31,7 +31,7 @@ public class CollectData {
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
 
             int docId = 0;
-            for (int i = 0; i < data.size(); i++) {
+            for (int i = 0; (i < data.size())&&(i<Constants.num_users); i++) { //allow running on small set of users
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
                 // Get top tracks for user
