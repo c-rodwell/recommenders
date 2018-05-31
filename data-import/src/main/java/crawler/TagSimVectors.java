@@ -27,32 +27,15 @@ public class TagSimVectors {
 
         LOG.info("Creating tag similarity vectors...");
 
-        HashMap<String, Integer> tagsMap = new HashMap<String, Integer>();
-
         // TODO: Need partitions for larger datasets
-        // TODO: This triple nested for loop is terrible... can get rid of one by collecting tags CollectData
         // get unique tracks from ES
         Terms uniqueTracksTerms = getUniqueTracks();
-        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
-            TopHits topHits = b.getAggregations().get("top");
-            for (SearchHit hit : topHits.getHits().getHits()) {
-                String artist = hit.getSourceAsMap().get("track_artist").toString();
-                String trackName = hit.getSourceAsMap().get("track_name").toString();
-                Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.APIKey);
-                int index = 0;
-                for (Tag t : topTags) {
-                    if (!tagsMap.containsKey(t.getName())) {
-                        tagsMap.put(t.getName(), index);
-                        index++;
-                    }
-                }
-                LOG.info(hit.getSourceAsString());
-            }
-        }
+
+        HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
 
         ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
 
-        // TODO: Get rid of this second pass by collecting tags in CollectData
+        // TODO: Terrible triple nested loop... Also get rid of this second pass by collecting tags in CollectData
         int docId = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             TopHits topHits = b.getAggregations().get("top");
@@ -73,6 +56,32 @@ public class TagSimVectors {
                 docId++;
             }
         }
+
+    }
+
+    private static HashMap<String, Integer> collectTags(Terms uniqueTracksTerms) {
+
+        HashMap<String, Integer> tagsMap = new HashMap<String, Integer>();
+
+        // TODO: This triple nested for loop is terrible... can get rid of one by collecting tags CollectData
+        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
+            TopHits topHits = b.getAggregations().get("top");
+            for (SearchHit hit : topHits.getHits().getHits()) {
+                String artist = hit.getSourceAsMap().get("track_artist").toString();
+                String trackName = hit.getSourceAsMap().get("track_name").toString();
+                Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.APIKey);
+                int index = 0;
+                for (Tag t : topTags) {
+                    if (!tagsMap.containsKey(t.getName())) {
+                        tagsMap.put(t.getName(), index);
+                        index++;
+                    }
+                }
+                LOG.info(hit.getSourceAsString());
+            }
+        }
+
+        return tagsMap;
 
     }
 
