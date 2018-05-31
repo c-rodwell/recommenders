@@ -69,21 +69,30 @@ public class TrackVectors {
             SearchResponse response2 = HighClient.getInstance().getClient().search(request2);
             SearchHits hits = response2.getHits();
             JsonArray vector = new JsonArray();
-
+int counter=0;
             int[] playCountArr = new int[usersToInts.size()];
             for (SearchHit hit : hits) {
                 int playCount = (int) hit.getSourceAsMap().get("track_playcount");
                 String username = ((String) hit.getSourceAsMap().get("username")).toLowerCase();
                 int index = 0;
                     playCountArr[usersToInts.get(username)] = playCount;
+                System.out.println();
+                counter++;
+             // System.out.println("# users passed into the array " + counter);
             }
+            System.out.println("vector's lenght" + playCountArr.length);
 biasEliminationBySD(playCountArr);
 
-
+int count = 0;
             for (int playCount : playCountArr) {
                 System.out.print(playCount+ " ");
                 vector.add(playCount);
+                count++;
             }
+
+            System.out.println();
+            System.out.println("# users in json " +count);
+
             JsonObject esObj = new JsonObject();
             esObj.addProperty("track_mid", trackMid);
             esObj.add("vector", vector);
@@ -112,16 +121,14 @@ biasEliminationBySD(playCountArr);
                 flag = true;
                 sum += arr[i];
                 counter++;                     //number of non-zero entries in the vector
+               //System.out.println("num of non-zero entries " +counter);
             }
         }
         if (flag) {
             double avg = sum / counter;
             // int avg = (int) (Math.round(average));
-
-
             for (int i = 0; i < arr.length; i++) {
                 if (arr[i] != 0) {
-
                     sumOfSquares +=  Math.round(Math.pow((arr[i] - avg), 2));
                 }
             }
@@ -139,7 +146,6 @@ biasEliminationBySD(playCountArr);
                 }
             }
         }
-
 
         return arr;
     }
