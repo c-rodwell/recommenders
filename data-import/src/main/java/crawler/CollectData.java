@@ -1,9 +1,12 @@
 package crawler;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
 import org.apache.log4j.Logger;
@@ -31,7 +34,7 @@ public class CollectData {
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
 
             int docId = 0;
-            for (int i = 0; (i < data.size())&&(i<Constants.num_users); i++) { //allow running on small set of users
+            for (int i = 0; (i < data.size()) && (i < Constants.num_users); i++) { //allow running on small set of users
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
                 // Get top tracks for user
@@ -42,13 +45,14 @@ public class CollectData {
                     esObj.addProperty("track_name", t.getName());
                     esObj.addProperty("track_playcount", t.getPlaycount());
                     esObj.addProperty("track_mid", t.getMbid());
+                    esObj.addProperty("track_artist", t.getArtist());
                     HighClient.getInstance().postJsonToES(Constants.USERS_INDEX, Constants.USERS_TYPE, docId, esObj);
                     docId++;
                 }
             }
 
         } catch (Exception e) {
-            LOG.error("Exception while loading usernames: " + e.getMessage());
+            LOG.error("Exception while loading usernames and tracks' data: " + e.getMessage());
         }
 
     }

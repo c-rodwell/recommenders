@@ -10,11 +10,39 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        populateUsersIndex();
-        populateTrackVectorsIndex();
+        final long startTime = System.currentTimeMillis();
 
+        populateUsersIndex();
+        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
+
+        populateTrackVectorsIndex();
+        LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
+
+        populateTagSimIndex();
+        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+
+        LOG.info("Closing ES clients...");
         HighClient.getInstance().close();
         LowClient.getInstance().close();
+        LOG.info("Done.");
+
+        final long endTime = System.currentTimeMillis();
+        System.out.println("Total execution time: " + ((endTime - startTime)/1000) + " seconds." );
+
+    }
+
+    private static void populateTagSimIndex() throws IOException {
+
+        // Delete existing index
+        boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.TAG_SIM_INDEX);
+        if (isIndexExists) {
+            HighClient.getInstance().deleteIndex(Constants.TAG_SIM_INDEX);
+        }
+
+        // Create new index
+        HighClient.getInstance().createIndex(Constants.TAG_SIM_INDEX);
+
+        TagSimVectors.createTagSimVectors();
 
     }
 
@@ -29,7 +57,7 @@ public class Main {
         // Create new index
         HighClient.getInstance().createIndex(Constants.TRACK_VECTORS_INDEX);
 
-        TrackVectors.createTrackVectors();
+        TrackVectors.createTrackSimVectors();
 
     }
 

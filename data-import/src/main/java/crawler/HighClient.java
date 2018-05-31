@@ -46,7 +46,7 @@ public class HighClient {
             CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
             client.indices().create(createIndexRequest);
         } catch (IOException e) {
-            LOG.error("Exception while creating index: " + e.getMessage());
+            LOG.error("Exception while creating index '" + index + "': " + e.getMessage());
         }
 
     }
@@ -59,7 +59,7 @@ public class HighClient {
             DeleteIndexResponse deleteIndexResponse = client.indices().delete(deleteIndexRequest);
             LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
         } catch (IOException e) {
-            LOG.info("Exception while deleting Elasticsearch index: " + e.getMessage());
+            LOG.info("Exception while deleting ES '" + index + "': " + e.getMessage());
         }
 
     }
@@ -74,7 +74,7 @@ public class HighClient {
             request.source(esObj.toString(), XContentType.JSON);
             client.index(request);
         } catch (IOException e) {
-            LOG.error("Exception while posting object to Elasticsearch index " + index + " : " + e.getMessage());
+            LOG.error("Exception while posting object to ES index '" + index + "': " + e.getMessage());
         }
 
     }
