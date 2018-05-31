@@ -41,7 +41,7 @@ public class TrackVectors {
 
         //make hash of userids to ints for building the vector
         HashMap<String, Integer> usersToInts = new HashMap<>();
-        SearchSourceBuilder user_builder = new SearchSourceBuilder();  //search query
+        SearchSourceBuilder user_builder = new SearchSourceBuilder();  
         user_builder.size(0);
         TermsAggregationBuilder userAggregationBuilder =
                 AggregationBuilders.terms("unique_users").field("username").size(Constants.num_users);
@@ -79,9 +79,9 @@ public class TrackVectors {
             }
 biasEliminationBySD(playCountArr);
 
-            //Alex, it is just for adding to elasticSearch
+
             for (int playCount : playCountArr) {
-                System.out.print(playCount+ " ");      //Alex, for testing
+                System.out.print(playCount+ " ");
                 vector.add(playCount);
             }
             JsonObject esObj = new JsonObject();

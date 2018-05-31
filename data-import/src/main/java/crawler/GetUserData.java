@@ -25,7 +25,7 @@ public class GetUserData {
 //make user data index in elasticsearch , using usernames from elasticsearch and data from last.fm api
     public static int USERS_SIZE = 1000;
     public static String aggr_name = "unique_users";
-    public static String namesFile = "lastfm-users-small";
+    public static String namesFile = "lastfm-users";
     //public static String userDataFile = "lastfm-userdata-test";
     public static String tracksByUserFile = "lastfm-usertracks-test";
     public static String tagsByTrackFile = "lastfm-tracktags-test";
@@ -46,25 +46,23 @@ public class GetUserData {
                     RestClient.builder(
                             new HttpHost("localhost", 9200, "http")));
 
-            // Creates the index if it hasn't been created
-            // Uncomment if you want to create the index
+             //Creates the index if it hasn't been created
+            //Uncomment if you want to create the index
 
             //elasticClient.indices().create(new CreateIndexRequest(tracksByUserFile));
-            //elasticClient.indices().create(new CreateIndexRequest(tagsByTrackFile));
+           // elasticClient.indices().create(new CreateIndexRequest(tagsByTrackFile));
 
             //get users from elasticsearch.
-            // request to get users is:
-//    {
-//        "size" : 0,
-//            "aggs" : {
-//        "distinct_users" : {
-//            "terms" : {
-//                "field" : "username",
-//                        "size" : 1000
-//            }
-//        }
-//    }
-//    }
+           //  request to get users is:
+ //  {
+ //     "size" : 0,
+ //          "aggs" : {
+  //      "distinct_users" : {
+   //         "terms" : {
+  //             "field" : "username",
+  //                      "size" : 1000           } }
+   // }
+ //   }
 
             SearchSourceBuilder namesRequestBuilder = new SearchSourceBuilder();
             namesRequestBuilder.size(0);
