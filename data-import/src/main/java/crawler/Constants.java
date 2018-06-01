@@ -15,6 +15,10 @@ public class Constants {
     public static final String TAG_SIM_INDEX = "tag-sim";
     public static final String TAG_SIM_TYPE = "tagvecs";
 
+    public static final String HISTORY_INDEX = "userhistory";
+    public static final String HISTORY_TYPE = "history";
+
+
     public static final String USERS_FILE = "users-small.json";
     public static final String APIKey = "685a323d182636518e80a296f620c8a2";
 

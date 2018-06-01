@@ -88,7 +88,7 @@ public class TrackVectors {
 
     }
 
-    private static Terms getUniqueUsers() throws IOException {
+    public static Terms getUniqueUsers() throws IOException {
 
         SearchSourceBuilder user_builder = new SearchSourceBuilder();
         user_builder.size(0);
