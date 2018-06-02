@@ -53,9 +53,9 @@ public class UserHistory {
 
                     //currentHistory.add(t.getMbid());
                     String mbid = t.getMbid();
-                    //only count non-blank mbid. if all are blank, we should eventually hit the "trackIter is out" condition
-                    if (mbid.equals("")){
-                        j--; //repeat this index
+                    //only count non-blank mbid which exist in trackVectors. if all are blank, we should eventually hit the "trackIter is out" condition
+                    if ((mbid.equals("")) || (TrackVectors.getTrackVector(mbid) == null)){
+                        j--; //repeat this index so we get the same total number
                     }
                     else {
                         currentHistoryObj.addProperty(Integer.toString(j), mbid); //use int -> string as key, will that be easy to retrieve?
@@ -98,13 +98,5 @@ public class UserHistory {
         return  (HashMap) historyObj.get(Integer.toString(historyNum));
     }
 
-//    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
-//        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
-//        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
-//        request.source(new SearchSourceBuilder().query(queryBuilder));
-//        SearchResponse response = HighClient.getInstance().getClient().search(request);
-//        SearchHit hit = response.getHits().getHits()[0]; //there should just be one
-//        return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
-//    }
 
 }

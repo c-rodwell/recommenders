@@ -139,8 +139,16 @@ public class TrackVectors {
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
         SearchResponse response = HighClient.getInstance().getClient().search(request);
-        SearchHit hit = response.getHits().getHits()[0]; //there should just be one
-        return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
+        SearchHit[] hits = response.getHits().getHits();
+        //there should be one result, but check if there are none or multiple
+        if (hits.length == 0){
+            return null;
+        } else  if (hits.length == 1) {
+            SearchHit hit = response.getHits().getHits()[0];
+            return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
+        } else{
+            throw new IOException("invalid state: more than one track vector for same trackId");
+        }
     }
 
 

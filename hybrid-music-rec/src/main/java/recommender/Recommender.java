@@ -51,13 +51,13 @@ public class Recommender {
         HashMap<String, String> userHistory;
         ArrayList<Integer> currentTrackVector;
         ArrayList<Integer> trackVectorFromHistory;
-        String username = "CaiusD";
-        String currentTrackId = "90a0c88f-f157-4594-afb2-d8a6213b61fd";
+        String username = "rockstr";
+        String currentTrackId = "0f87d638-f36c-4db8-a992-df4a83d49092";
         try {
-            userHistory = UserHistory.getHistoryForUser("username", 3);
+            userHistory = UserHistory.getHistoryForUser(username, 3);
             currentTrackVector = TrackVectors.getTrackVector(currentTrackId);
             double similarity = 0.0;
-            for (int i=1; i<=currentTrackVector.size(); i++){
+            for (int i=1; i<=userHistory.size(); i++){
                 String historyTrackName = userHistory.get(Integer.toString(i));
                 trackVectorFromHistory = TrackVectors.getTrackVector(historyTrackName);
                 similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
