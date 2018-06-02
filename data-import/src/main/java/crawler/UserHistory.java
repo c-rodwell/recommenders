@@ -5,7 +5,13 @@ import com.google.gson.JsonObject;
 import de.umass.lastfm.PaginatedResult;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,20 +29,13 @@ public class UserHistory {
     //create set of user histories for each user - each history is a sequence of tracks the user listened to
     //put the results in Elasticsearch: user1 -> (history1 , history2, ...) where each is a sequence of track_mid
     public static void makeUserHistories() throws IOException {
-
-        //create an index for user histories, but for now I'll do it as a hashmap
-        //HashMap<String, ArrayList<ArrayList<String>>> allUsersHistories = new HashMap<String, ArrayList<ArrayList<String>>>();
-
         //I made TrackVectors.UniqueUsers() public so I can use it here
         //should it go in a utility methods class instead? or save the info in an accessible place?
         Terms uniqueUsersTerms = TrackVectors.getUniqueUsers();
         int docId=0;
         for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
 
-            //what form to put a vector in ES? Trackvectors has JsonArray(), TagSimVectors does Gson().toJsonTree on an Arraylist
-            //try a json with explicit integers as keys, maybe that will be easier to retreive
-
-            //ArrayList<ArrayList<String>> userHistories = new ArrayList<ArrayList<String>>(); //should there be a class for this?
+            //what form to put a vector in ES? try a json with explicit integers as keys, maybe that will be easier to retreive
             JsonObject userHistoriesObj = new JsonObject();
 
             String username = b.getKeyAsString();
@@ -69,12 +68,18 @@ public class UserHistory {
             //allUsersHistories.put(username,userHistories);
             JsonObject esObj = new JsonObject();
             esObj.addProperty("username", username);
-            //JsonObject historiesObj = new JsonObject();
-            //historiesObj.addProperty("test", 0);  //replace 0 with some representation of the histories
             esObj.add("histories", userHistoriesObj);
             HighClient.getInstance().postJsonToES(Constants.HISTORY_INDEX, Constants.HISTORY_TYPE, docId, esObj);
             docId++;
         }
-        return;
+    }
+
+    public static SearchHit getHistoriesForUser(String username) throws IOException {
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("username", username);
+        SearchRequest request = new SearchRequest(Constants.HISTORY_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response = HighClient.getInstance().getClient().search(request);
+        SearchHit result = response.getHits().getHits()[0]; //should be just one hit for the username
+        return result; //could get the separate histories here too.
     }
 }

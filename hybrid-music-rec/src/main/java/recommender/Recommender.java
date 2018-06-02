@@ -1,6 +1,12 @@
 package recommender;
 
+import crawler.TrackVectors;
+import crawler.UserHistory;
 import org.apache.log4j.Logger;
+import org.elasticsearch.common.document.DocumentField;
+import org.elasticsearch.search.SearchHit;
+
+import java.io.IOException;
 
 /**
  * Hello world!
@@ -39,14 +45,29 @@ public class Recommender {
         System.out.println("adjusted similarity of v1 relative to v3 is: "+asim31);
         System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
 
+        //test getting user history
+        SearchHit userHistoryHit;
+        SearchHit trackVectorHit;
+        try {
+            userHistoryHit = UserHistory.getHistoriesForUser("CaiusD");
+            trackVectorHit = TrackVectors.getTrackVector("acc74a10-ff4c-4bfb-b9aa-08d10e92c9f5");
+            DocumentField field = userHistoryHit.field("1");
+            String s = field.toString();
+        } catch (IOException e){
+            System.out.println("error getting data from elasticsearch: "+e.getMessage());
+        }
+
+
     }
 
     //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
     //weighted sum of different cosine distance similarity functions on user's listening history
-    public String[] recommendTracks(String user, int numToRecommend){
+    public String[] recommendTracks(String user, String[] history, int numToRecommend){
         String[] tracks = new String[numToRecommend];
-        //decide what tracks to recommend for the user
-        //get user's listening history
+        for (String trackID: history){
+
+        }
+
         //for each track in dataset:
         //for each track in user's history:
         //compute similarity, add it to relevance score for the track
@@ -55,6 +76,10 @@ public class Recommender {
         return tracks;
     }
 
+    public double relevanceOfTrack(String user, String trackId, String[] history){
+        double total = 0.0;
+        return total;
+    }
 
     //similarity of two tracks = cosine distance of the user listening vectors
     //subtract from each vector : "the average number of times the user j listened to a track"

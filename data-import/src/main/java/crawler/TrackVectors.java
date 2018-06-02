@@ -120,6 +120,15 @@ biasEliminationBySD(playCountArr);
 
     }
 
+    //get a track vector by id
+    public static SearchHit getTrackVector(String trackMid) throws IOException {
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response = HighClient.getInstance().getClient().search(request);
+        return response.getHits().getHits()[0]; //should be just one vector for the track id
+    }
+
 
     /**
      * Eliminates the popularity bias by normalize the track vector
