@@ -51,9 +51,10 @@ public class Recommender {
         HashMap<String, String> userHistory;
         ArrayList<Integer> currentTrackVector;
         ArrayList<Integer> trackVectorFromHistory;
-        String currentTrackId = "051caac1-1f67-4733-80b5-62cb32660daa";
+        String username = "CaiusD";
+        String currentTrackId = "90a0c88f-f157-4594-afb2-d8a6213b61fd";
         try {
-            userHistory = UserHistory.getHistoryForUser("CaiusD", 3);
+            userHistory = UserHistory.getHistoryForUser("username", 3);
             currentTrackVector = TrackVectors.getTrackVector(currentTrackId);
             double similarity = 0.0;
             for (int i=1; i<=currentTrackVector.size(); i++){
