@@ -16,8 +16,10 @@ import java.io.FileReader;
 public class LoadUserNames
 {
 
+    private static String INDEX = "lastfm-users2";
     public static void main( String[] args )
     {
+
 
         // TODO Can probably multi-thread this to make it faster for larger datasets
         try {
@@ -35,7 +37,7 @@ public class LoadUserNames
 
             // Creates the index if it hasn't been created
             // Uncomment if you want to create the index
-            CreateIndexRequest request1 = new CreateIndexRequest("lastfm-users");
+            CreateIndexRequest request1 = new CreateIndexRequest(INDEX);
             client.indices().create(request1);
 
             JsonArray data = obj.get("data").getAsJsonArray();
@@ -50,7 +52,7 @@ public class LoadUserNames
 
                 // inserts into the index
                 IndexRequest request = new IndexRequest(
-                    "lastfm-users", // index
+                    INDEX, // index
                     "message",  // type
                     Integer.toString(i)); // document id
                 request.source(esObj.toString(), XContentType.JSON);

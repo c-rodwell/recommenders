@@ -19,6 +19,6 @@ public class Constants {
     public static final String APIKey = "685a323d182636518e80a296f620c8a2";
 
     public static final int num_users = 12;
-    public static final int num_tracks = 10;
+    public static final int num_tracks = 50;
 
 }
