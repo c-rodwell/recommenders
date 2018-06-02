@@ -16,6 +16,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TrackVectors {
@@ -40,6 +41,7 @@ public class TrackVectors {
         for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
             String username = b.getKeyAsString();
             usersToInts.put(username.toLowerCase(), userCount);
+            System.out.println("user "+userCount+" is: "+username);
             userCount++;
         }
 
@@ -121,12 +123,25 @@ biasEliminationBySD(playCountArr);
     }
 
     //get a track vector by id
-    public static SearchHit getTrackVector(String trackMid) throws IOException {
+
+    //want to make:
+    // {
+    //  "query": {
+    //    "match": {
+    //      "track_mid": {
+    //        "query": "0091a2a5-28af-4193-adc4-8a376c9cfae0"
+    //      }
+    //    }
+    //  }
+    //}
+
+    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
         QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
         SearchResponse response = HighClient.getInstance().getClient().search(request);
-        return response.getHits().getHits()[0]; //should be just one vector for the track id
+        SearchHit hit = response.getHits().getHits()[0]; //there should just be one
+        return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
     }
 
 

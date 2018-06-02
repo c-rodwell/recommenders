@@ -74,12 +74,37 @@ public class UserHistory {
         }
     }
 
-    public static SearchHit getHistoriesForUser(String username) throws IOException {
+    //get the user history vector:
+//    {
+//        "query": {
+//        "match": {
+//            "username": {
+//                "query": "joelochli"
+//            }
+//        }
+//    }
+//    }
+
+    //get a user history by username and history number
+    //this gets all the user histories and then just picks one - is that inefficient?
+    public static HashMap<String, String> getHistoryForUser(String username, int historyNum) throws IOException {
         QueryBuilder queryBuilder = QueryBuilders.matchQuery("username", username);
         SearchRequest request = new SearchRequest(Constants.HISTORY_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
         SearchResponse response = HighClient.getInstance().getClient().search(request);
-        SearchHit result = response.getHits().getHits()[0]; //should be just one hit for the username
-        return result; //could get the separate histories here too.
+        SearchHit hit = response.getHits().getHits()[0]; //should be just one hit for the username
+        HashMap historyObj = (HashMap) hit.getSourceAsMap().get("histories");
+        //HashMap history1Obj = (HashMap) historyObj.get("1");
+        return  (HashMap) historyObj.get(Integer.toString(historyNum));
     }
+
+//    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
+//        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+//        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
+//        request.source(new SearchSourceBuilder().query(queryBuilder));
+//        SearchResponse response = HighClient.getInstance().getClient().search(request);
+//        SearchHit hit = response.getHits().getHits()[0]; //there should just be one
+//        return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
+//    }
+
 }
