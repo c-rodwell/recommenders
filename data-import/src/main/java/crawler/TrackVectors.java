@@ -16,6 +16,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TrackVectors {
@@ -33,13 +34,13 @@ public class TrackVectors {
         // TODO: Need partitions for larger datasets
         // make hash of userids to ints for building the vector
         HashMap<String, Integer> usersToInts = new HashMap<>();
-
         Terms uniqueUsersTerms = getUniqueUsers();
 
         int userCount = 0;
         for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
             String username = b.getKeyAsString();
             usersToInts.put(username.toLowerCase(), userCount);
+            System.out.println("user "+userCount+" is: "+username);
             userCount++;
         }
 
@@ -58,7 +59,6 @@ public class TrackVectors {
             }
 
             biasEliminationBySD(playCountArr);
-
 
             for (int playCount : playCountArr) {
                 System.out.print(playCount+ " ");
@@ -92,7 +92,7 @@ public class TrackVectors {
 
     }
 
-    private static Terms getUniqueUsers() throws IOException {
+    public static Terms getUniqueUsers() throws IOException {
 
         SearchSourceBuilder user_builder = new SearchSourceBuilder();
         user_builder.size(0);
@@ -119,6 +119,36 @@ public class TrackVectors {
         SearchResponse response = HighClient.getInstance().getClient().search(request);
         return response.getHits();
 
+    }
+
+    //get a track vector by id
+
+    //want to make:
+    // {
+    //  "query": {
+    //    "match": {
+    //      "track_mid": {
+    //        "query": "0091a2a5-28af-4193-adc4-8a376c9cfae0"
+    //      }
+    //    }
+    //  }
+    //}
+
+    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response = HighClient.getInstance().getClient().search(request);
+        SearchHit[] hits = response.getHits().getHits();
+        //there should be one result, but check if there are none or multiple
+        if (hits.length == 0){
+            return null;
+        } else  if (hits.length == 1) {
+            SearchHit hit = response.getHits().getHits()[0];
+            return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
+        } else{
+            throw new IOException("invalid state: more than one track vector for same trackId");
+        }
     }
 
 

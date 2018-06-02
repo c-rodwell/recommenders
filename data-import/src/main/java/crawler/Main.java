@@ -25,6 +25,9 @@ public class Main {
         populateTagSimIndex();
         LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
 
+        populateUserHistoryIndex();
+        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+
         LOG.info("Closing ES clients...");
         HighClient.getInstance().close();
         LowClient.getInstance().close();
@@ -80,6 +83,22 @@ public class Main {
         LowClient.getInstance().putMapping(CollectData.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
 
         CollectData.loadUserTopTracks();
+
+    }
+
+    private static void populateUserHistoryIndex() throws IOException {
+
+        // Delete existing index
+        boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.HISTORY_INDEX);
+        if (isIndexExists) {
+            HighClient.getInstance().deleteIndex(Constants.HISTORY_INDEX);
+        }
+
+        // Create new index
+        HighClient.getInstance().createIndex(Constants.HISTORY_INDEX);
+
+        //does this need a mapping like users index?
+        UserHistory.makeUserHistories();
 
     }
 
