@@ -57,7 +57,10 @@ public class TrackVectors {
                 playCountArr[usersToInts.get(username)] = playCount;
             }
 
+biasEliminationBySD(playCountArr);
+
             for (int playCount : playCountArr) {
+                System.out.print(playCount+ " ");
                 vector.add(playCount);
             }
 
@@ -117,4 +120,53 @@ public class TrackVectors {
 
     }
 
+
+    /**
+     * Eliminates the popularity bias by normalize the track vector
+     * using calculations based on sample standard deviation
+     * @param arr int array[]
+     * @return int array[]
+     */
+    public static int[] biasEliminationBySD(int [] arr ) {
+        int sum = 0;
+        int counter = 0;
+        double sumOfSquares = 0;
+        boolean flag = false;
+
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] != 0) {
+                flag = true;
+                sum += arr[i];
+                counter++;                     //number of non-zero entries in the vector
+            }
+        }
+        if (flag) {
+            double avg = sum / counter;
+            // int avg = (int) (Math.round(average));
+
+
+            for (int i = 0; i < arr.length; i++) {
+                if (arr[i] != 0) {
+
+                    sumOfSquares +=  Math.round(Math.pow((arr[i] - avg), 2));
+                }
+            }
+            int sd = 0;
+            try {
+                if(counter == 1)
+                    counter++;                                                        // to avoid unexpected division by zero
+                sd = (int) (Math.ceil(Math.sqrt((sumOfSquares / (counter - 1)))));
+            } catch (ArithmeticException e) {
+                System.out.println("Division by zero " + e);
+            }
+            for (int i = 0; i < arr.length; i++) {
+                if ((arr[i] != 0) && (arr[i] > 2 * sd)) {
+                    arr[i] = arr[i] - 2 * sd;
+                }
+            }
+        }
+
+
+        return arr;
+    }
 }
