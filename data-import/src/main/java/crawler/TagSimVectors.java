@@ -8,6 +8,8 @@ import de.umass.lastfm.Track;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -30,27 +32,41 @@ public class TagSimVectors {
         // TODO: Need partitions for larger datasets
         // get unique tracks from ES
         Terms uniqueTracksTerms = getUniqueTracks();
-
         HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
 
-        ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
+        ArrayList<String> tagnames = new ArrayList<>(Collections.nCopies(tagsMap.size(), "blank"));
+//        System.out.println(tagnames);
 
-        // TODO: Terrible triple nested loop... Also get rid of this second pass by collecting tags in CollectData
+        for(Map.Entry<String, Integer> entry : tagsMap.entrySet()) {
+//            System.out.println(entry.getKey() + " : " + entry.getValue());
+            tagnames.set(entry.getValue(), entry.getKey());
+        }
+//        System.out.println(tagsMap.size());
+//        System.out.println(tagnames);
+
+
         int docId = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             TopHits topHits = b.getAggregations().get("top");
             for (SearchHit hit : topHits.getHits().getHits()) {
+                ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
                 String artist = hit.getSourceAsMap().get("track_artist").toString();
                 String trackName = hit.getSourceAsMap().get("track_name").toString();
                 String trackMid = hit.getSourceAsMap().get("track_mid").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.APIKey);
-                int index = 0;
-                for (Tag t : topTags) {
-                    vector.add(tagsMap.get(t.getName()), t.getCount());
+                for (Tag t : topTags ) {
+                    if (tagsMap.containsKey(t.getName())) {
+                        vector.set(tagsMap.get(t.getName()), t.getCount());
+                    }
                 }
+//                System.out.println(vector);
                 JsonObject esObj = new JsonObject();
                 esObj.addProperty("track_mid", trackMid);
+                esObj.addProperty("track_artist", artist);
+                esObj.addProperty("track_name", trackName);
                 esObj.add("vector", new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
+                }.getType()));
+                esObj.add("tagnames", new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
                 }.getType()));
                 HighClient.getInstance().postJsonToES(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE, docId, esObj);
                 docId++;
@@ -63,21 +79,24 @@ public class TagSimVectors {
 
         HashMap<String, Integer> tagsMap = new HashMap<String, Integer>();
 
-        // TODO: This triple nested for loop is terrible... can get rid of one by collecting tags CollectData
+        int index = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             TopHits topHits = b.getAggregations().get("top");
             for (SearchHit hit : topHits.getHits().getHits()) {
                 String artist = hit.getSourceAsMap().get("track_artist").toString();
                 String trackName = hit.getSourceAsMap().get("track_name").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.APIKey);
-                int index = 0;
+                int i = 0;
                 for (Tag t : topTags) {
                     if (!tagsMap.containsKey(t.getName())) {
                         tagsMap.put(t.getName(), index);
                         index++;
                     }
+                    i++;
+                    if (i == 5) {
+                        break;
+                    }
                 }
-                LOG.info(hit.getSourceAsString());
             }
         }
 
@@ -86,6 +105,7 @@ public class TagSimVectors {
     }
 
     private static Terms getUniqueTracks() throws IOException {
+
 
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.size(0);

@@ -31,7 +31,6 @@ public class TrackVectors {
         // get unique tracks from ES
         Terms uniqueTracksTerms = getUniqueTracks();
 
-
         // TODO: Need partitions for larger datasets
         // make hash of userids to ints for building the vector
         HashMap<String, Integer> usersToInts = new HashMap<>();
@@ -59,7 +58,7 @@ public class TrackVectors {
                 playCountArr[usersToInts.get(username)] = playCount;
             }
 
-biasEliminationBySD(playCountArr);
+            biasEliminationBySD(playCountArr);
 
             for (int playCount : playCountArr) {
                 System.out.print(playCount+ " ");
@@ -189,7 +188,6 @@ biasEliminationBySD(playCountArr);
                 }
             }
         }
-
 
         return arr;
     }

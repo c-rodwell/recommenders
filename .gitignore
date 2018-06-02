@@ -4,5 +4,7 @@
 *.iws
 *.ipr
 .idea/
+bin/
+.DS_Store
 
 target

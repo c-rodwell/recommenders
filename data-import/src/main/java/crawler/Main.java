@@ -1,8 +1,10 @@
 package crawler;
 
+import de.umass.lastfm.Caller;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class Main {
 
@@ -11,6 +13,8 @@ public class Main {
     public static void main(String[] args) throws IOException {
 
         final long startTime = System.currentTimeMillis();
+
+        Caller.getInstance().getLogger().setLevel(Level.OFF);
 
         populateUsersIndex();
         LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
