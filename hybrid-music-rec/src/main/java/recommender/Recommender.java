@@ -1,5 +1,6 @@
 package recommender;
 
+import crawler.Constants;
 import crawler.TrackVectors;
 import crawler.UserHistory;
 import org.apache.log4j.Logger;
@@ -53,14 +54,22 @@ public class Recommender {
         ArrayList<Integer> trackVectorFromHistory;
         String username = "rockstr";
         String currentTrackId = "0f87d638-f36c-4db8-a992-df4a83d49092";
+
+        Integer[] currentTrackArr = new Integer[crawler.Constants.num_users];
+        Integer[] historyTrackArr = new Integer[crawler.Constants.num_users];
+
         try {
             userHistory = UserHistory.getHistoryForUser(username, 3);
             currentTrackVector = TrackVectors.getTrackVector(currentTrackId);
+            currentTrackVector.toArray(currentTrackArr);
             double similarity = 0.0;
             for (int i=1; i<=userHistory.size(); i++){
                 String historyTrackName = userHistory.get(Integer.toString(i));
                 trackVectorFromHistory = TrackVectors.getTrackVector(historyTrackName);
-                similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
+                trackVectorFromHistory.toArray(historyTrackArr);
+
+                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
+                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
             }
             System.out.println("score for track "+currentTrackId+ " is "+similarity);
         } catch (IOException e){
