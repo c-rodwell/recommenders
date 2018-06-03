@@ -40,14 +40,17 @@ public class CollectData {
                 // Get top tracks for user
                 Collection<Track> topTracks = User.getTopTracks(username, Constants.APIKey);
                 for (Track t : topTracks) {
-                    JsonObject esObj = new JsonObject();
-                    esObj.addProperty("username", username);
-                    esObj.addProperty("track_name", t.getName());
-                    esObj.addProperty("track_playcount", t.getPlaycount());
-                    esObj.addProperty("track_mid", t.getMbid());
-                    esObj.addProperty("track_artist", t.getArtist());
-                    HighClient.getInstance().postJsonToES(Constants.USERS_INDEX, Constants.USERS_TYPE, docId, esObj);
-                    docId++;
+                    String mbid = t.getMbid();
+                    if ((mbid != null)&&(mbid.length()>0)) {
+                        JsonObject esObj = new JsonObject();
+                        esObj.addProperty("username", username);
+                        esObj.addProperty("track_name", t.getName());
+                        esObj.addProperty("track_playcount", t.getPlaycount());
+                        esObj.addProperty("track_mid", t.getMbid());
+                        esObj.addProperty("track_artist", t.getArtist());
+                        HighClient.getInstance().postJsonToES(Constants.USERS_INDEX, Constants.USERS_TYPE, docId, esObj);
+                        docId++;
+                    }
                 }
             }
 
