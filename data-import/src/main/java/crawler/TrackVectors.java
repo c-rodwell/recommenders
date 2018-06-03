@@ -24,6 +24,8 @@ public class TrackVectors {
     private static final Logger LOG = Logger.getLogger(TrackVectors.class);
 
     public static void createTrackVectors() throws IOException {
+       // int x =AggregationBuilders.terms("unique_tracks").field("track_mid").size();
+       // System.out.println("track_mid is missing "+ );
 
         //get unique tracks from ES
         SearchSourceBuilder builder = new SearchSourceBuilder();
@@ -31,7 +33,6 @@ public class TrackVectors {
         TermsAggregationBuilder aggregationBuilder =
                 AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.num_tracks);
         builder.aggregation(aggregationBuilder);
-
         SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
         request.source(builder);
         SearchResponse response = HighClient.getInstance().getClient().search(request);
@@ -53,12 +54,14 @@ public class TrackVectors {
         Terms usersRespRerms = users_aggr.get("unique_users");
         int userCount = 0;
         for (Terms.Bucket b: usersRespRerms.getBuckets()) {
+
             String username = b.getKeyAsString();
             usersToInts.put(username.toLowerCase(), userCount);
             userCount++;
         }
 
         int docId = 0;
+        int docID2 =0;
         for (Terms.Bucket b: resp_terms.getBuckets()){
             String trackMid = b.getKeyAsString();
             System.out.println(trackMid);
@@ -81,7 +84,7 @@ int counter=0;
              // System.out.println("# users passed into the array " + counter);
             }
             System.out.println("vector's lenght" + playCountArr.length);
-biasEliminationBySD(playCountArr);
+
 
 int count = 0;
             for (int playCount : playCountArr) {
@@ -98,8 +101,20 @@ int count = 0;
             esObj.add("vector", vector);
             HighClient.getInstance().postJsonToES(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE, docId, esObj);
             docId++;
-        }
+//-------------------------------------------------------------------
+            biasEliminationBySD(playCountArr);
 
+            for (int playCount2 : playCountArr) {
+                System.out.print(playCount2+ " ");
+                vector.add(playCount2);
+                count++;
+            }
+            JsonObject esObj2 = new JsonObject();
+            esObj2.addProperty("track_mid", trackMid);
+            esObj2.add("vector", vector);
+            HighClient.getInstance().postJsonToES(Constants.NORMALIZED_TRACK_VECTORS_INDEX, Constants.NORMALIZED_TRACK_VECTORS_TYPE, docID2, esObj2);
+            docID2++;
+        }
 
     }
 

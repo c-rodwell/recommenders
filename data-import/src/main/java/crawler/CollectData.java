@@ -42,6 +42,8 @@ public class CollectData {
                     esObj.addProperty("track_name", t.getName());
                     esObj.addProperty("track_playcount", t.getPlaycount());
                     esObj.addProperty("track_mid", t.getMbid());
+
+
                     HighClient.getInstance().postJsonToES(Constants.USERS_INDEX, Constants.USERS_TYPE, docId, esObj);
                     docId++;
                 }
@@ -63,13 +65,18 @@ public class CollectData {
         tracknameMap.put("type", "text");
         tracknameMap.put("fielddata", true);
 
-        Map<String, Object> trackmidMap = new HashMap<>();
+        Map<String, Object> trackmidMap = new HashMap<>(); //trisha
         trackmidMap.put("type", "keyword");
+
 
         Map<String, Object> propertiesMap = new HashMap<>();
         propertiesMap.put("username", usernameMap);
         propertiesMap.put("track_name", tracknameMap);
-        propertiesMap.put("track_mid", trackmidMap);
+
+            propertiesMap.put("track_mid", trackmidMap);
+
+            propertiesMap.remove("track_mid");
+
 
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("properties", propertiesMap);
