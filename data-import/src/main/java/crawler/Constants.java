@@ -25,4 +25,8 @@ public class Constants {
     public static final int num_users = 2;
     public static final int num_tracks = 100;
 
+    public static final String SOCRATA_APIKey = "55KiTqMCKtty3TJqWO5VBq5aG";
+    public static final int NUM_OF_USERS = 123000;
+    public static final int SET_LIMIT = 50000;
+
 }
