@@ -9,6 +9,7 @@ import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -52,26 +53,41 @@ public class Recommender {
         HashMap<String, String> userHistory;
         ArrayList<Integer> currentTrackVector;
         ArrayList<Integer> trackVectorFromHistory;
+        ArrayList<Integer> currentTagVector;
+        ArrayList<Integer> tagVectorFromHistory;
         String username = "rockstr";
-        String currentTrackId = "0f87d638-f36c-4db8-a992-df4a83d49092";
+        String currentTrackId = "25a15376-38aa-495c-af02-734170454a1e";
 
         Integer[] currentTrackArr = new Integer[crawler.Constants.num_users];
         Integer[] historyTrackArr = new Integer[crawler.Constants.num_users];
 
+        Integer[] currentTagArr = new Integer[crawler.Constants.num_users];
+        Integer[] historyTagArr = new Integer[crawler.Constants.num_users];
+
         try {
             userHistory = UserHistory.getHistoryForUser(username, 3);
             currentTrackVector = TrackVectors.getTrackVector(currentTrackId);
-            currentTrackVector.toArray(currentTrackArr);
+            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
+
+            currentTagVector = ESHelpers.getTagVector(currentTrackId);
+            currentTagArr = currentTagVector.toArray(currentTagArr);
+
             double similarity = 0.0;
-            for (int i=1; i<=userHistory.size(); i++){
+            double tagSimilarity = 0.0;
+            for (int i=1; i<=userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
                 trackVectorFromHistory = TrackVectors.getTrackVector(historyTrackName);
-                trackVectorFromHistory.toArray(historyTrackArr);
+                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
+
+                tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
+                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
 
                 //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
                 similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
             }
             System.out.println("score for track "+currentTrackId+ " is "+similarity);
+            System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
         } catch (IOException e){
             System.out.println("error getting data from elasticsearch: "+e.getMessage());
         }
@@ -106,6 +122,10 @@ public class Recommender {
     //should we subtract here? or subtract when creating the vectors?
     //adjust by track popularity - defined by listening total for all users for the track- this is sum of the vector
     public static double trackSimilarity(Integer[] track1, Integer[] track2){
+        return cosineDistance(track1, track2);
+    }
+
+    public static double tagSimilarity(Integer[] track1, Integer[] track2){
         return cosineDistance(track1, track2);
     }
 

@@ -21,14 +21,14 @@ public class Main {
         populateUsersIndex();
         LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
 
-//        populateTrackVectorsIndex();
-//        LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
-//
-//        populateTagSimIndex();
-//        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
-//
-//        populateUserHistoryIndex();
-//        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+        populateTrackVectorsIndex();
+        LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
+
+        populateTagSimIndex();
+        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+
+        populateUserHistoryIndex();
+        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
 
         LOG.info("Closing ES clients...");
         HighClient.getInstance().close();
@@ -82,10 +82,9 @@ public class Main {
         HighClient.getInstance().createIndex(Constants.USERS_INDEX);
 
         // Put mapping
-        LowClient.getInstance().putMapping(Crawler.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
+        LowClient.getInstance().putMapping(CollectData.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
 
-        // CollectData.loadUserTopTracks();
-        Crawler.crawlForUsers();
+        CollectData.loadUserTopTracks();
 
     }
 

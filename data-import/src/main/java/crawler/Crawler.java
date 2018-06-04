@@ -22,6 +22,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ *
+ * Bulk processor for inserting users > 5000 to Elasticsearch
+ *
+ */
 public class Crawler {
 
     private static final Logger LOG = Logger.getLogger(Crawler.class);
@@ -31,16 +36,18 @@ public class Crawler {
     public static void crawlForUsers() {
 
         int offset = 0;
-        int partitions = Constants.NUM_OF_USERS / Constants.SET_LIMIT;
-        int remainder = Constants.NUM_OF_USERS % Constants.SET_LIMIT;
+        int partitions = Constants.NUM_OF_USERS / Constants.SODA_MAX;
+        int remainder = Constants.NUM_OF_USERS % Constants.SODA_MAX;
 
         for (int i = 0; i < partitions; i++) {
-            offset = i * Constants.SET_LIMIT;
-            crawl(offset, Constants.SET_LIMIT);
+            offset = i * Constants.SODA_MAX;
+            crawl(offset, Constants.SODA_MAX);
+            bulkInsert();
         }
 
         if (remainder > 0) {
             crawl(offset, remainder);
+            bulkInsert();
         }
 
     }
@@ -77,7 +84,7 @@ public class Crawler {
             JsonObject obj = data.get(i).getAsJsonObject();
             String username = obj.get("username").getAsString();
             try {
-                Collection<Track> topTracks = User.getTopTracks(username, Constants.APIKey);
+                Collection<Track> topTracks = User.getTopTracks(username, Constants.LASTFM_APIKey);
                 for (Track t : topTracks) {
                     if (t.getMbid().length() > 0) {
                         JsonObject esObj = new JsonObject();
