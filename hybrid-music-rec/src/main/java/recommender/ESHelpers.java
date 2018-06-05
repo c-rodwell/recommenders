@@ -1,10 +1,11 @@
 package recommender;
 
-import crawler.Constants;
-import crawler.HighClient;
+import org.apache.http.HttpHost;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -12,20 +13,37 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-/**
- * Hello world!
- *
- */
 public class ESHelpers {
 
     private static final Logger LOG = Logger.getLogger(ESHelpers.class);
+
+    private static RestHighLevelClient client = new RestHighLevelClient(
+            RestClient.builder(new HttpHost(Constants.ES_HOST, Constants.ES_PORT, Constants.SCHEME)));
+
+    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response = client.search(request);
+        SearchHit[] hits = response.getHits().getHits();
+        //there should be one result, but check if there are none or multiple
+        if (hits.length == 0){
+            return null;
+        } else  if (hits.length == 1) {
+            SearchHit hit = response.getHits().getHits()[0];
+            return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
+        } else{
+            throw new IOException("invalid state: more than one track vector for same trackId");
+        }
+    }
 
     public static ArrayList<Integer> getTagVector(String trackMid) throws IOException {
         QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.TAG_SIM_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
-        SearchResponse response = HighClient.getInstance().getClient().search(request);
+        SearchResponse response = client.search(request);
         SearchHit[] hits = response.getHits().getHits();
         // there should be one result, but check if there are none or multiple
         if (hits.length == 0){
@@ -38,4 +56,22 @@ public class ESHelpers {
         }
 
     }
+
+    //get a user history by username and history number
+    //this gets all the user histories and then just picks one - is that inefficient?
+    public static HashMap<String, String> getHistoryForUser(String username, int historyNum) throws IOException {
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("username", username);
+        SearchRequest request = new SearchRequest(Constants.HISTORY_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response = client.search(request);
+        SearchHit hit = response.getHits().getHits()[0]; //should be just one hit for the username
+        HashMap historyObj = (HashMap) hit.getSourceAsMap().get("histories");
+        //HashMap history1Obj = (HashMap) historyObj.get("1");
+        return  (HashMap) historyObj.get(Integer.toString(historyNum));
+    }
+
+    public static void close() throws IOException {
+        client.close();
+    }
+
 }

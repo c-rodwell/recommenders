@@ -1,32 +1,19 @@
 package recommender;
 
-import crawler.Constants;
-import crawler.TrackVectors;
-import crawler.UserHistory;
 import org.apache.log4j.Logger;
-import org.elasticsearch.common.document.DocumentField;
-import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
-/**
- * Hello world!
- *
- */
 public class Recommender {
 
     private static final Logger LOG = Logger.getLogger(Recommender.class);
 
-    private static final String ES_HOST = "localhost";
-    private static final int ES_PORT = 9200;
-    private static final String SCHEME = "http";
-    private static final String ES_INDEX = "users";
-    private static final String ES_TYPE = "user";
+    public static void main(String[] args) throws IOException {
 
-    public static void main(String[] args){
+        LOG.info("Start recommender");
+
         //for now this is just testing
 //        Integer[] v1 = {0,0,1,2,3};
 //        Integer[] v2 = {3,4,0,0,0};
@@ -58,15 +45,15 @@ public class Recommender {
         String username = "rockstr";
         String currentTrackId = "25a15376-38aa-495c-af02-734170454a1e";
 
-        Integer[] currentTrackArr = new Integer[crawler.Constants.num_users];
-        Integer[] historyTrackArr = new Integer[crawler.Constants.num_users];
+        Integer[] currentTrackArr = new Integer[Constants.num_users];
+        Integer[] historyTrackArr = new Integer[Constants.num_users];
 
-        Integer[] currentTagArr = new Integer[crawler.Constants.num_users];
-        Integer[] historyTagArr = new Integer[crawler.Constants.num_users];
+        Integer[] currentTagArr = new Integer[Constants.num_users];
+        Integer[] historyTagArr = new Integer[Constants.num_users];
 
         try {
-            userHistory = UserHistory.getHistoryForUser(username, 3);
-            currentTrackVector = TrackVectors.getTrackVector(currentTrackId);
+            userHistory = ESHelpers.getHistoryForUser(username, 3);
+            currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
             currentTrackArr = currentTrackVector.toArray(currentTrackArr);
 
             currentTagVector = ESHelpers.getTagVector(currentTrackId);
@@ -76,7 +63,7 @@ public class Recommender {
             double tagSimilarity = 0.0;
             for (int i=1; i<=userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
-                trackVectorFromHistory = TrackVectors.getTrackVector(historyTrackName);
+                trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
                 historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
 
                 tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
@@ -88,12 +75,26 @@ public class Recommender {
             }
             System.out.println("score for track "+currentTrackId+ " is "+similarity);
             System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
+            weightedAvg(similarity, tagSimilarity);
         } catch (IOException e){
             System.out.println("error getting data from elasticsearch: "+e.getMessage());
         }
 
+        ESHelpers.close();
 
         System.exit(0);
+    }
+
+    public static double weightedAvg(double trackSim, double tagSim) {
+
+        double trackSimWeight = 0.6;
+        double tagSimWeight = 0.4;
+
+        double weightedAvg = (trackSimWeight * trackSim) + (tagSimWeight * tagSim);
+
+        System.out.println(weightedAvg);
+
+        return weightedAvg;
     }
 
     //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
