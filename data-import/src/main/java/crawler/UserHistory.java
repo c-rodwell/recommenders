@@ -1,6 +1,5 @@
 package crawler;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.umass.lastfm.PaginatedResult;
 import de.umass.lastfm.Track;
@@ -14,8 +13,6 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -39,7 +36,7 @@ public class UserHistory {
             JsonObject userHistoriesObj = new JsonObject();
 
             String username = b.getKeyAsString();
-            PaginatedResult<Track> recentTracksPage = User.getRecentTracks(username,1, recentTracksSize, Constants.APIKey);
+            PaginatedResult<Track> recentTracksPage = User.getRecentTracks(username,1, recentTracksSize, Constants.LASTFM_APIKey);
             Iterator<Track> trackIter = recentTracksPage.iterator();;
             for (int i=1; i<=historiesPerUser; i++){
                 //ArrayList<String> currentHistory = new ArrayList<String>();

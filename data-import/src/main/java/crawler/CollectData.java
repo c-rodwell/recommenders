@@ -1,12 +1,9 @@
 package crawler;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
 import org.apache.log4j.Logger;
@@ -38,7 +35,7 @@ public class CollectData {
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
                 // Get top tracks for user
-                Collection<Track> topTracks = User.getTopTracks(username, Constants.APIKey);
+                Collection<Track> topTracks = User.getTopTracks(username, Constants.LASTFM_APIKey);
                 for (Track t : topTracks) {
                     String mbid = t.getMbid();
                     if ((mbid != null)&&(mbid.length()>0)) {

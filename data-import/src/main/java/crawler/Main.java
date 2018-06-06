@@ -12,8 +12,10 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
+        LOG.info("Begin crawler program");
         final long startTime = System.currentTimeMillis();
 
+        // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
         
         createNormalizedVectorIndex();

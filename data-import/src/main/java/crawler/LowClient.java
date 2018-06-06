@@ -42,7 +42,7 @@ public class LowClient {
             int statusCode = response.getStatusLine().getStatusCode();
             isIndexExists = statusCode != HttpStatus.SC_NOT_FOUND;
         } catch (IOException e) {
-            LOG.info("Exception while checking if ES index '" + index + "' exists: " + e.getMessage());
+            LOG.info("Exception while checking if ES index='" + index + "' exists : " + e.getMessage());
         }
         return isIndexExists;
 
@@ -54,12 +54,12 @@ public class LowClient {
             Response response = client.performRequest("POST", "/" + index + "/_refresh");
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == HttpStatus.SC_OK) {
-                LOG.info("Refreshed index='" + index + "'.");
+                LOG.info("Refreshed index='" + index + "'");
             } else {
-                LOG.info("Failed to refresh index='" + index + "'.");
+                LOG.info("Failed to refresh index='" + index + "'");
             }
         } catch (IOException e) {
-            LOG.info("Exception while refreshing ES index '" + index + "' exists: " + e.getMessage());
+            LOG.info("Exception while refreshing ES index '" + index + "' : " + e.getMessage());
         }
 
     }
@@ -73,9 +73,9 @@ public class LowClient {
             Response response = client.performRequest("PUT", "/" + index + "/_mapping/" + type, params, entity);
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == HttpStatus.SC_OK) {
-                LOG.info("Mapping is created for index='" + index + "'.");
+                LOG.info("Mapping is created for index='" + index + "'");
             } else {
-                LOG.info("Failed to create mapping index='" + index + "'.");
+                LOG.info("Failed to create mapping index='" + index + "'");
             }
         } catch (IOException e) {
             LOG.info("Exception while creating mapping | index='" + index + "', type='" + type + "' : " + e.getMessage());

@@ -21,8 +21,7 @@ public class HighClient {
     private RestHighLevelClient client = new RestHighLevelClient(
             RestClient.builder(new HttpHost(Constants.ES_HOST, Constants.ES_PORT, Constants.SCHEME)));
 
-    private HighClient() {
-    }
+    private HighClient() { }
 
     public static HighClient getInstance() {
         if (instance == null) {
@@ -42,11 +41,11 @@ public class HighClient {
     public void createIndex(String index) {
 
         try {
-            LOG.info("Creating new Elasticsearch index: " + index);
+            LOG.info("Creating new Elasticsearch index='" + index + "'");
             CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
             client.indices().create(createIndexRequest);
         } catch (IOException e) {
-            LOG.error("Exception while creating index '" + index + "': " + e.getMessage());
+            LOG.error("Exception while creating index='" + index + "' : " + e.getMessage());
         }
 
     }
@@ -54,12 +53,12 @@ public class HighClient {
     public void deleteIndex(String index) {
 
         try {
-            LOG.info("Deleting existing " + index + " index..");
+            LOG.info("Deleting existing index='" + index + "'");
             DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(index);
             DeleteIndexResponse deleteIndexResponse = client.indices().delete(deleteIndexRequest);
             LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
         } catch (IOException e) {
-            LOG.info("Exception while deleting ES '" + index + "': " + e.getMessage());
+            LOG.info("Exception while deleting ES index='" + index + "' : " + e.getMessage());
         }
 
     }
@@ -74,7 +73,7 @@ public class HighClient {
             request.source(esObj.toString(), XContentType.JSON);
             client.index(request);
         } catch (IOException e) {
-            LOG.error("Exception while posting object to ES index '" + index + "': " + e.getMessage());
+            LOG.error("Exception while posting object to ES index='" + index + "' : " + e.getMessage());
         }
 
     }
