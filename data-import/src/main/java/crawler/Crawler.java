@@ -52,7 +52,7 @@ public class Crawler {
 
     }
 
-    public static void crawl(int offset, int limit) {
+    private static void crawl(int offset, int limit) {
 
         Soda2Consumer consumer = Soda2Consumer.newConsumer("https://opendata.socrata.com/?$$app_token=" + Constants.SOCRATA_APIKey);
         SoqlQuery usersQuery = new SoqlQueryBuilder()

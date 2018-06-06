@@ -18,17 +18,17 @@ public class Main {
         // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
 
-        populateUsersIndex();
-        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
+//        populateUsersIndex();
+//        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
 
         populateTrackVectorsIndex();
         LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
 
-        populateTagSimIndex();
-        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
-
-        populateUserHistoryIndex();
-        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+//        populateTagSimIndex();
+//        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+//
+//        populateUserHistoryIndex();
+//        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
 
         LOG.info("Closing ES clients...");
 
@@ -87,10 +87,9 @@ public class Main {
         HighClient.getInstance().createIndex(Constants.USERS_INDEX);
 
         // Put mapping
-        LowClient.getInstance().putMapping(CollectData.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
+        LowClient.getInstance().putMapping(Crawler.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
 
-        // TODO: This can be replaced with Crawler method
-        CollectData.loadUserTopTracks();
+        Crawler.crawlForUsers();
 
     }
 

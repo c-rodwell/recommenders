@@ -22,7 +22,7 @@ public class Constants {
     public static final String LASTFM_APIKey = "685a323d182636518e80a296f620c8a2";
 
     public static final String SOCRATA_Resource = "5vvd-truf";
-    public static final int NUM_OF_USERS = 123000;
+    public static final int NUM_OF_USERS = 5000;
     public static final int SODA_MAX = 50000;
     public static final int ES_MAX = 10000;
 

@@ -14,10 +14,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -36,7 +33,7 @@ public class TagSimVectors {
 
         LOG.info("Creating tag similarity vectors...");
 
-        Terms uniqueTracksTerms = getUniqueTracks();
+        Terms uniqueTracksTerms = UsersHelper.getUniqueTracks();
         if (uniqueTracksTerms == null) {
             LOG.info("Unable to create tag similarity vectors. Failed to fetch unique tracks.");
             return;
@@ -55,8 +52,8 @@ public class TagSimVectors {
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
             try {
-                String artist = getHit(trackMid).getSourceAsMap().get("track_artist").toString();
-                String trackName = getHit(trackMid).getSourceAsMap().get("track_name").toString();
+                String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
+                String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
 
                 ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
@@ -102,8 +99,8 @@ public class TagSimVectors {
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
             try {
-                String artist = getHit(trackMid).getSourceAsMap().get("track_artist").toString();
-                String trackName = getHit(trackMid).getSourceAsMap().get("track_name").toString();
+                String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
+                String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
                 for (Tag t : topTags ) {
                     if (!tagsMap.containsKey(t.getName())) {
@@ -117,51 +114,6 @@ public class TagSimVectors {
         }
 
         return tagsMap;
-
-    }
-
-    private static Terms getUniqueTracks() {
-
-        SearchSourceBuilder builder = new SearchSourceBuilder();
-        builder.size(0);
-
-        TermsAggregationBuilder aggregationBuilder =
-                AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.num_tracks);
-        builder.aggregation(aggregationBuilder);
-
-        SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
-        request.source(builder);
-
-        SearchResponse response;
-        try {
-            response = HighClient.getInstance().getClient().search(request);
-            Aggregations aggr = response.getAggregations();
-            return aggr.get("unique_tracks");
-        } catch (IOException e) {
-            LOG.error("Failed to fetch unique tracks from ES index='" + Constants.USERS_INDEX + "' : " + e.getMessage());
-        }
-
-        return null;
-
-    }
-
-    private static SearchHit getHit(String trackMid) {
-
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
-        SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
-        request.source(new SearchSourceBuilder().query(queryBuilder));
-        SearchResponse response;
-        try {
-            response = HighClient.getInstance().getClient().search(request);
-            SearchHit[] hits = response.getHits().getHits();
-            if (hits.length > 0) {
-                return response.getHits().getHits()[0];
-            }
-        } catch (IOException e) {
-            LOG.error("Failed to fetch track_mid='" + trackMid + "' from ES index='" + Constants.USERS_INDEX + "'");
-        }
-
-        return null;
 
     }
 
