@@ -60,14 +60,15 @@ public class TrackVectors {
                 
             }
             for (int i=0; i<playCountArr.length; i++){
-            System.out.println(playCountArr[i]);
+            System.out.print(playCountArr[i]);
             
         }
+            System.out.println("");
 
            // int arr [] = biasEliminationBySD(playCountArr);
 
             for (int playCount : playCountArr) {
-                System.out.print(playCount+ "palycount ");
+             //   System.out.print(playCount+ "palycount ");
                 vector.add(playCount);
             }
 
@@ -80,7 +81,7 @@ public class TrackVectors {
              int arr [] = biasEliminationBySD(playCountArr);
 
             for (int playCount : arr) {
-                System.out.print(playCount+ "palycount ");
+                //System.out.print(playCount+ "palycount ");
                 vector.add(playCount);
             }
 
