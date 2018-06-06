@@ -17,6 +17,9 @@ public class Main {
 
         // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
+        
+        createNormalizedVectorIndex();
+        LowClient.getInstance().refreshIndex(Constants.NORMALIZED_VECTOR2_INDEX);
 
         populateUsersIndex();
         LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
@@ -24,11 +27,13 @@ public class Main {
         populateTrackVectorsIndex();
         LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
 
-        populateTagSimIndex();
-        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+        //populateTagSimIndex();
+       // LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
 
-        populateUserHistoryIndex();
-        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+        //populateUserHistoryIndex();
+        //LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+        
+        
 
         LOG.info("Closing ES clients...");
         HighClient.getInstance().close();
@@ -36,7 +41,7 @@ public class Main {
         LOG.info("Done.");
 
         final long endTime = System.currentTimeMillis();
-        System.out.println("Total execution time: " + ((endTime - startTime)/1000) + " seconds." );
+        System.out.println("Total execution time: " + ((endTime - startTime) / 1000) + " seconds.");
 
     }
 
@@ -87,6 +92,19 @@ public class Main {
         CollectData.loadUserTopTracks();
 
     }
+    
+    public static void createNormalizedVectorIndex(){
+         boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.NORMALIZED_VECTOR2_INDEX);
+        if (isIndexExists) {
+            HighClient.getInstance().deleteIndex(Constants.NORMALIZED_VECTOR2_INDEX);
+        }
+
+        // Create new index
+        HighClient.getInstance().createIndex(Constants.NORMALIZED_VECTOR2_INDEX);
+
+      
+        
+            }
 
     private static void populateUserHistoryIndex() throws IOException {
 

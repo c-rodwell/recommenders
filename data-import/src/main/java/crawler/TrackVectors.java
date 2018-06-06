@@ -45,6 +45,7 @@ public class TrackVectors {
         }
 
         int docId = 0;
+        int docId2 = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
 
@@ -56,12 +57,18 @@ public class TrackVectors {
                 int playCount = (int) hit.getSourceAsMap().get("track_playcount");
                 String username = ((String) hit.getSourceAsMap().get("username")).toLowerCase();
                 playCountArr[usersToInts.get(username)] = playCount;
+                
             }
+            for (int i=0; i<playCountArr.length; i++){
+            System.out.print(playCountArr[i]);
+            
+        }
+            System.out.println("");
 
-            biasEliminationBySD(playCountArr);
+           // int arr [] = biasEliminationBySD(playCountArr);
 
             for (int playCount : playCountArr) {
-                System.out.print(playCount+ " ");
+             //   System.out.print(playCount+ "palycount ");
                 vector.add(playCount);
             }
 
@@ -70,6 +77,19 @@ public class TrackVectors {
             esObj.add("vector", vector);
             HighClient.getInstance().postJsonToES(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE, docId, esObj);
             docId++;
+            
+             int arr [] = biasEliminationBySD(playCountArr);
+
+            for (int playCount : arr) {
+                //System.out.print(playCount+ "palycount ");
+                vector.add(playCount);
+            }
+
+            JsonObject esObj2 = new JsonObject();
+            esObj2.addProperty("track_mid", trackMid);
+            esObj2.add("vector", vector);
+            HighClient.getInstance().postJsonToES(Constants.NORMALIZED_VECTOR2_INDEX, Constants.NORMALIZED_VECTOR2_INDEX, docId, esObj2);
+            docId2++;
         }
 
     }
@@ -120,22 +140,9 @@ public class TrackVectors {
         return response.getHits();
 
     }
-
-    //get a track vector by id
-
-    //want to make:
-    // {
-    //  "query": {
-    //    "match": {
-    //      "track_mid": {
-    //        "query": "0091a2a5-28af-4193-adc4-8a376c9cfae0"
-    //      }
-    //    }
-    //  }
-    //}
-
+   
     public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);      
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
         SearchResponse response = HighClient.getInstance().getClient().search(request);
@@ -150,8 +157,8 @@ public class TrackVectors {
             throw new IOException("invalid state: more than one track vector for same trackId");
         }
     }
-
-
+    
+    
     /**
      * Eliminates the popularity bias by normalize the track vector
      * using calculations based on sample standard deviation
