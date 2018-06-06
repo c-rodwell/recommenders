@@ -45,7 +45,7 @@ public class HighClient {
             CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
             client.indices().create(createIndexRequest);
         } catch (IOException e) {
-            LOG.error("Exception while creating index='" + index + "' : " + e.getMessage());
+            LOG.error("Failed to create index='" + index + "' : " + e.getMessage());
         }
 
     }
@@ -58,7 +58,7 @@ public class HighClient {
             DeleteIndexResponse deleteIndexResponse = client.indices().delete(deleteIndexRequest);
             LOG.info("Delete successful? " + deleteIndexResponse.isAcknowledged());
         } catch (IOException e) {
-            LOG.info("Exception while deleting ES index='" + index + "' : " + e.getMessage());
+            LOG.info("Failed to delete ES index='" + index + "' : " + e.getMessage());
         }
 
     }
@@ -73,7 +73,7 @@ public class HighClient {
             request.source(esObj.toString(), XContentType.JSON);
             client.index(request);
         } catch (IOException e) {
-            LOG.error("Exception while posting object to ES index='" + index + "' : " + e.getMessage());
+            LOG.error("Failed to post object to ES index='" + index + "' : " + e.getMessage());
         }
 
     }

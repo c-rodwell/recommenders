@@ -42,7 +42,7 @@ public class LowClient {
             int statusCode = response.getStatusLine().getStatusCode();
             isIndexExists = statusCode != HttpStatus.SC_NOT_FOUND;
         } catch (IOException e) {
-            LOG.info("Exception while checking if ES index='" + index + "' exists : " + e.getMessage());
+            LOG.info("Failed to check if ES index='" + index + "' exists : " + e.getMessage());
         }
         return isIndexExists;
 
@@ -59,7 +59,7 @@ public class LowClient {
                 LOG.info("Failed to refresh index='" + index + "'");
             }
         } catch (IOException e) {
-            LOG.info("Exception while refreshing ES index '" + index + "' : " + e.getMessage());
+            LOG.info("Failed to refresh ES index '" + index + "' : " + e.getMessage());
         }
 
     }
@@ -78,7 +78,7 @@ public class LowClient {
                 LOG.info("Failed to create mapping index='" + index + "'");
             }
         } catch (IOException e) {
-            LOG.info("Exception while creating mapping | index='" + index + "', type='" + type + "' : " + e.getMessage());
+            LOG.info("Failed to create mapping | index='" + index + "', type='" + type + "' : " + e.getMessage());
         }
 
     }

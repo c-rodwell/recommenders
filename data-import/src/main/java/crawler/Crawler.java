@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  *
- * Bulk processor for inserting users > 5000 to Elasticsearch
+ * Bulk processor for inserting large dataset of users to Elasticsearch
  *
  */
 public class Crawler {
@@ -62,23 +62,25 @@ public class Crawler {
                 .setLimit(limit)
                 .setOffset(offset)
                 .build();
+
         try {
-            ClientResponse response = consumer.query("5vvd-truf", HttpLowLevel.JSON_TYPE, usersQuery);
+            ClientResponse response = consumer.query(Constants.SOCRATA_Resource, HttpLowLevel.JSON_TYPE, usersQuery);
             String payload = response.getEntity(String.class);
             JsonParser parser = new JsonParser();
             data = parser.parse(payload).getAsJsonArray();
             LOG.info("Fetched data size=" + data.size());
         } catch (LongRunningQueryException e) {
-            LOG.error("Exception while querying for users and play_count : " + e.getMessage());
+            LOG.error("Exception while executing Soda query, program will continue : " + e.getMessage());
         } catch (SodaError sodaError) {
             LOG.error("Soda API threw an exception, program will continue : " + sodaError.getMessage());
         }
 
     }
 
-    public static void bulkInsert() {
+    private static void bulkInsert() {
 
-        LOG.info("Starting bulk insert of users to ES...");
+        LOG.info("Begin bulk insert of users dataset to ES...");
+
         BulkRequest bulkRequest = new BulkRequest();
         for (int i = 0; i < data.size(); i++) {
             JsonObject obj = data.get(i).getAsJsonObject();
@@ -91,24 +93,21 @@ public class Crawler {
                         esObj.addProperty("username", username);
                         esObj.addProperty("track_name", t.getName());
                         esObj.addProperty("track_playcount", t.getPlaycount());
-                        esObj.addProperty("track_mbid", t.getMbid());
+                        esObj.addProperty("track_mid", t.getMbid());
                         esObj.addProperty("track_artist", t.getArtist());
                         bulkRequest.add(new IndexRequest(Constants.USERS_INDEX, Constants.USERS_TYPE)
                                 .source(esObj.toString(), XContentType.JSON));
                     }
                 }
             } catch(Exception e) {
-                LOG.error("last.fm API threw an exception, crawler will continue : " + e.getMessage());
+                LOG.error("last.fm API threw an exception, program will continue : " + e.getMessage());
             }
         }
 
-
-        if (bulkRequest.estimatedSizeInBytes() > 0) {
-            try {
-                HighClient.getInstance().getClient().bulk(bulkRequest);
-            } catch (IOException e) {
-                LOG.error("Exception on ES bulk insert : " + e.getMessage());
-            }
+        try {
+            HighClient.getInstance().getClient().bulk(bulkRequest);
+        } catch (IOException e) {
+            LOG.error("Failed to bulk insert user dataset : " + e.getMessage());
         }
 
     }
@@ -123,13 +122,13 @@ public class Crawler {
         tracknameMap.put("type", "text");
         tracknameMap.put("fielddata", true);
 
-        Map<String, Object> trackmbidMap = new HashMap<>();
-        trackmbidMap.put("type", "keyword");
+        Map<String, Object> trackmidMap = new HashMap<>();
+        trackmidMap.put("type", "keyword");
 
         Map<String, Object> propertiesMap = new HashMap<>();
         propertiesMap.put("username", usernameMap);
         propertiesMap.put("track_name", tracknameMap);
-        propertiesMap.put("track_mbid", trackmbidMap);
+        propertiesMap.put("track_mid", trackmidMap);
 
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("properties", propertiesMap);

@@ -12,7 +12,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        LOG.info("Begin crawler program");
+        LOG.info("Begin crawler program.");
         final long startTime = System.currentTimeMillis();
 
         // This disables the last-fm loggings
@@ -31,12 +31,16 @@ public class Main {
         LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
 
         LOG.info("Closing ES clients...");
+
         HighClient.getInstance().close();
         LowClient.getInstance().close();
-        LOG.info("Done.");
+
+        LOG.info("Data import done.");
 
         final long endTime = System.currentTimeMillis();
-        System.out.println("Total execution time: " + ((endTime - startTime)/1000) + " seconds." );
+        LOG.info("Total data-import program execution time: " + ((endTime - startTime)/1000) + " seconds." );
+
+        System.exit(0);
 
     }
 
@@ -51,6 +55,7 @@ public class Main {
         // Create new index
         HighClient.getInstance().createIndex(Constants.TAG_SIM_INDEX);
 
+        // create tag similarity vectors and post to Elasticsearch
         TagSimVectors.createTagSimVectors();
 
     }
@@ -84,6 +89,7 @@ public class Main {
         // Put mapping
         LowClient.getInstance().putMapping(CollectData.getMapping(), Constants.USERS_INDEX, Constants.USERS_TYPE);
 
+        // TODO: This can be replaced with Crawler method
         CollectData.loadUserTopTracks();
 
     }
