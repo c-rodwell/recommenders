@@ -1,6 +1,7 @@
 package recommender;
 
 import org.apache.log4j.Logger;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,50 +38,41 @@ public class Recommender {
 //        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
 
         //test getting user history
-        HashMap<String, String> userHistory;
-        ArrayList<Integer> currentTrackVector;
-        ArrayList<Integer> trackVectorFromHistory;
-        ArrayList<Integer> currentTagVector;
-        ArrayList<Integer> tagVectorFromHistory;
+
         String username = "rockstr";
         String currentTrackId = "25a15376-38aa-495c-af02-734170454a1e";
+        HashMap<String, Double> scores = recommendTracksForUser(username, 1, 10);
 
-        Integer[] currentTrackArr = new Integer[Constants.num_users];
-        Integer[] historyTrackArr = new Integer[Constants.num_users];
-
-        Integer[] currentTagArr = new Integer[Constants.num_users];
-        Integer[] historyTagArr = new Integer[Constants.num_users];
-
-        try {
-            userHistory = ESHelpers.getHistoryForUser(username, 3);
-            currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
-            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
-
-            currentTagVector = ESHelpers.getTagVector(currentTrackId);
-            currentTagArr = currentTagVector.toArray(currentTagArr);
-
-            double similarity = 0.0;
-            double tagSimilarity = 0.0;
-            for (int i=1; i<=userHistory.size(); i++) {
-                String historyTrackName = userHistory.get(Integer.toString(i));
-                trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
-                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
-
-                tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
-                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
-
-                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
-                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
-                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
-            }
-            System.out.println("score for track "+currentTrackId+ " is "+similarity);
-            System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
-            weightedAvg(similarity, tagSimilarity);
-        } catch (IOException e){
-            System.out.println("error getting data from elasticsearch: "+e.getMessage());
-        }
-
-        ESHelpers.close();
+//        try {
+//            userHistory = ESHelpers.getHistoryForUser(username, 3);
+//            currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
+//            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
+//
+//            currentTagVector = ESHelpers.getTagVector(currentTrackId);
+//            currentTagArr = currentTagVector.toArray(currentTagArr);
+//
+//            double similarity = 0.0;
+//            double tagSimilarity = 0.0;
+//            for (int i=1; i<=userHistory.size(); i++) {
+//                String historyTrackName = userHistory.get(Integer.toString(i));
+//                trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
+//                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
+//
+//                tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
+//                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
+//
+//                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
+//                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+//                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
+//            }
+//            System.out.println("score for track "+currentTrackId+ " is "+similarity);
+//            System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
+//            weightedAvg(similarity, tagSimilarity);
+//        } catch (IOException e){
+//            System.out.println("error getting data from elasticsearch: "+e.getMessage());
+//        }
+//
+//        ESHelpers.close();
 
         System.exit(0);
     }
@@ -99,18 +91,78 @@ public class Recommender {
 
     //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
     //weighted sum of different cosine distance similarity functions on user's listening history
-    public String[] recommendTracks(String user, String[] history, int numToRecommend){
+    public static HashMap<String, Double> recommendTracksForUser(String username, int historyNum, int numToRecommend){
         String[] tracks = new String[numToRecommend];
-        for (String trackID: history){
+        HashMap<String, Double> trackScores = new HashMap<String, Double>();
 
+        //get history
+        HashMap<String, String> userHistory = new HashMap<String, String>();
+        ArrayList<Integer> trackVectorFromHistory;
+        ArrayList<Integer> tagVectorFromHistory;
+        Integer[] historyTrackArr = new Integer[Constants.num_users];
+        Integer[] historyTagArr = new Integer[Constants.num_users];
+        try{
+            userHistory = ESHelpers.getHistoryForUser(username, historyNum);
+        } catch (IOException e){
+            System.out.println("error getting data from elasticsearch: "+e.getMessage());
         }
+
+        //loop for each track we have a vector for
+        Terms uniqueTracksTerms = ESHelpers.getTracksWhichHaveVectors();
+        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
+            String currentTrackId = b.getKeyAsString();
+            ArrayList<Integer> currentTrackVector;
+            ArrayList<Integer> currentTagVector;
+            Integer[] currentTrackArr = new Integer[Constants.num_users];
+            Integer[] currentTagArr = new Integer[Constants.num_users];
+            try{
+                currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
+                currentTrackArr = currentTrackVector.toArray(currentTrackArr);
+
+                currentTagVector = ESHelpers.getTagVector(currentTrackId);
+                currentTagArr = currentTagVector.toArray(currentTagArr);
+            } catch (IOException e){
+                System.out.println("error getting data from elasticsearch: "+e.getMessage());
+            }
+            double similarity = 0.0;
+            double tagSimilarity = 0.0;
+
+            //loop over tracks in history
+            for (int i=1; i<=userHistory.size(); i++) {
+                String historyTrackName = userHistory.get(Integer.toString(i));
+                try {
+                    trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
+                    historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
+
+                    tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
+                    historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
+                } catch (IOException e){
+                    System.out.println(e.getMessage());
+                }
+
+                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
+                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
+            }
+            //System.out.println("score for track "+currentTrackId+ " is "+similarity);
+            //System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
+            trackScores.put(currentTrackId, weightedAvg(similarity, tagSimilarity));
+        }
+
+
+        try {
+            ESHelpers.close();
+        } catch (IOException e){
+            System.out.println(e.getMessage());
+
+    }
 
         //for each track in dataset:
         //for each track in user's history:
         //compute similarity, add it to relevance score for the track
         //maybe compute similarities first, put in ES)
         //return tracks with most relevance
-        return tracks;
+        return trackScores;
     }
 
     public double relevanceOfTrack(String user, String trackId, String[] history){

@@ -5,6 +5,7 @@ public class Constants {
     public static final String SCHEME = "http";
     public static final String ES_HOST = "localhost";
     public static final int ES_PORT = 9200;
+    public static final int ES_MAX = 10000;
 
     public static final String USERS_INDEX = "users";
     public static final String TRACK_VECTORS_INDEX = "trackvectors";

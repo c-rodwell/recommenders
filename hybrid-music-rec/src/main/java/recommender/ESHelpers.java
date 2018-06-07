@@ -9,11 +9,16 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 
 public class ESHelpers {
 
@@ -72,6 +77,31 @@ public class ESHelpers {
 
     public static void close() throws IOException {
         client.close();
+    }
+
+    public static Terms getTracksWhichHaveVectors() {
+
+        SearchSourceBuilder builder = new SearchSourceBuilder();
+        builder.size(0);
+
+        TermsAggregationBuilder aggregationBuilder =
+                AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.ES_MAX);
+        builder.aggregation(aggregationBuilder);
+
+        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
+        request.source(builder);
+
+        SearchResponse response;
+        try {
+            response = client.search(request);
+            Aggregations aggr = response.getAggregations();
+            return aggr.get("unique_tracks");
+        } catch (IOException e) {
+            LOG.error("Failed to fetch unique tracks from track vectors index='" + Constants.TRACK_VECTORS_INDEX + "' : " + e.getMessage());
+        }
+
+        return null;
+
     }
 
 }
