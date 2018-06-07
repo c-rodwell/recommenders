@@ -1,6 +1,5 @@
 package crawler;
 
-import com.sun.tools.internal.jxc.ap.Const;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -17,8 +16,6 @@ public class TrackVectorsHelper {
 
     /**
      * Checks whether trackMid is in trackvectors
-     * @param trackMid
-     * @return
      */
     public static boolean isInTrackVectors(String trackMid) {
 

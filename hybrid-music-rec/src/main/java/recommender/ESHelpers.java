@@ -42,7 +42,7 @@ public class ESHelpers {
         return vector;
 
     }
-    
+
     public static HashMap<String, String> getHistoryForUser(String username, int historyNum) {
 
         QueryBuilder queryBuilder = QueryBuilders.matchPhraseQuery("username", username);
