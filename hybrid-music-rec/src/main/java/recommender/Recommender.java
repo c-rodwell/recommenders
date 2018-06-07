@@ -39,10 +39,8 @@ public class Recommender {
 //        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
 
         //test getting user history
-
         String username = "rockstr";
         String trackid = "0f9201b6-6989-476e-b11e-fe3c0f3d4dc1"; //track listened to by h0bbel
-
 
         HashMap<String, String> history = ESHelpers.getHistoryForUser(username, 1);
         HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
@@ -143,25 +141,9 @@ public class Recommender {
             System.out.println(queue.remove().toString());
         }
 
-        try {
-            ESHelpers.close();
-        } catch (IOException e){
-            System.out.println(e.getMessage());
-
-    }
-
-        //for each track in dataset:
-        //for each track in user's history:
-        //compute similarity, add it to relevance score for the track
-        //maybe compute similarities first, put in ES)
-        //return tracks with most relevance
         return trackScores;
     }
 
-    public double relevanceOfTrack(String user, String trackId, String[] history){
-        double total = 0.0;
-        return total;
-    }
 
     //similarity of two tracks = cosine distance of the user listening vectors
     //subtract from each vector : "the average number of times the user j listened to a track"
