@@ -18,6 +18,9 @@ public class Main {
         // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
 
+        createNormalizedVectorIndex();
+        LowClient.getInstance().refreshIndex(Constants.NORMALIZED_VECTOR2_INDEX);
+
         populateUsersIndex();
         LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
 
@@ -38,13 +41,13 @@ public class Main {
         LOG.info("Data import done.");
 
         final long endTime = System.currentTimeMillis();
-        LOG.info("Total data-import program execution time: " + ((endTime - startTime)/1000) + " seconds." );
+        LOG.info("Total data import program execution time: " + ((endTime - startTime) / 1000) + " seconds.");
 
         System.exit(0);
 
     }
 
-    private static void populateTagSimIndex() throws IOException {
+    private static void populateTagSimIndex() {
 
         // Delete existing index
         boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.TAG_SIM_INDEX);
@@ -93,7 +96,20 @@ public class Main {
 
     }
 
-    private static void populateUserHistoryIndex() throws IOException {
+    private static void createNormalizedVectorIndex() {
+
+        // Delete existing index
+        boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.NORMALIZED_VECTOR2_INDEX);
+        if (isIndexExists) {
+            HighClient.getInstance().deleteIndex(Constants.NORMALIZED_VECTOR2_INDEX);
+        }
+
+        // Create new index
+        HighClient.getInstance().createIndex(Constants.NORMALIZED_VECTOR2_INDEX);
+
+    }
+
+    private static void populateUserHistoryIndex() {
 
         // Delete existing index
         boolean isIndexExists = LowClient.getInstance().isIndexExists(Constants.HISTORY_INDEX);

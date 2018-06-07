@@ -66,6 +66,7 @@ public class TrackVectors {
         LOG.info("Begin bulk insert of track similarity vectors to ES...");
         // prepare bulk request to ES
         BulkRequest bulkRequest = new BulkRequest();
+        int docId = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
             try {
@@ -81,8 +82,6 @@ public class TrackVectors {
                     }
                 }
 
-                biasEliminationBySD(playCountArr);
-
                 for (int playCount : playCountArr) {
                     vector.add(playCount);
                 }
@@ -93,6 +92,19 @@ public class TrackVectors {
 
                 bulkRequest.add(new IndexRequest(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE)
                         .source(esObj.toString(), XContentType.JSON));
+
+                int arr [] = biasEliminationBySD(playCountArr);
+
+                for (int playCount : arr) {
+                    // System.out.print(playCount+ "palycount ");
+                    vector.add(playCount);
+                }
+
+                JsonObject esObj2 = new JsonObject();
+                esObj2.addProperty("track_mid", trackMid);
+                esObj2.add("vector", vector);
+                HighClient.getInstance().postJsonToES(Constants.NORMALIZED_VECTOR2_INDEX, Constants.NORMALIZED_VECTOR2_INDEX, docId, esObj2);
+                docId++;
 
             } catch (NullPointerException e) {
                 LOG.error("Failed to add track vector for track mid='" + trackMid + "'");

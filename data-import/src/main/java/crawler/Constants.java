@@ -18,6 +18,9 @@ public class Constants {
     public static final String HISTORY_INDEX = "userhistory";
     public static final String HISTORY_TYPE = "history";
 
+    public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
+    public static final String NORMALIZED_VECTOR_2_TYPE = "norm-vector-2";
+
     public static final String SOCRATA_APIKey = "55KiTqMCKtty3TJqWO5VBq5aG";
     public static final String LASTFM_APIKey = "685a323d182636518e80a296f620c8a2";
 
