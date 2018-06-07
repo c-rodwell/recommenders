@@ -18,26 +18,6 @@ public class UsersHelper {
 
     private static final Logger LOG = Logger.getLogger(UsersHelper.class);
 
-    public static SearchHit getHit(String trackMid) {
-
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
-        SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
-        request.source(new SearchSourceBuilder().query(queryBuilder));
-        SearchResponse response;
-        try {
-            response = HighClient.getInstance().getClient().search(request);
-            SearchHit[] hits = response.getHits().getHits();
-            if (hits.length > 0) {
-                return response.getHits().getHits()[0];
-            }
-        } catch (IOException e) {
-            LOG.error("Failed to fetch track_mid='" + trackMid + "' from ES index='" + Constants.USERS_INDEX + "'");
-        }
-
-        return null;
-
-    }
-
     public static Terms getUniqueTracks() {
 
         SearchSourceBuilder builder = new SearchSourceBuilder();
@@ -88,6 +68,24 @@ public class UsersHelper {
 
     }
 
+    public static SearchHit getHit(String trackMid) {
 
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response;
+        try {
+            response = HighClient.getInstance().getClient().search(request);
+            SearchHit[] hits = response.getHits().getHits();
+            if (hits.length > 0) {
+                return response.getHits().getHits()[0];
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to fetch track_mid='" + trackMid + "' from ES index='" + Constants.USERS_INDEX + "'");
+        }
+
+        return null;
+
+    }
 
 }

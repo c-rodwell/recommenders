@@ -47,9 +47,10 @@ public class TagSimVectors {
             tagnames.set(entry.getValue(), entry.getKey());
         }
 
-        // prepare bulk request to ES
-        BulkRequest bulkRequest = new BulkRequest();
+        LOG.info("Begin bulk insert of tag similarity vectors to ES...");
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
+            // prepare bulk request to ES
+            BulkRequest bulkRequest = new BulkRequest();
             String trackMid = b.getKeyAsString();
             try {
                 String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
@@ -70,9 +71,9 @@ public class TagSimVectors {
                 esObj.add("vector",
                         new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
                         }.getType()));
-                esObj.add("tagnames",
-                        new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
-                        }.getType()));
+//                esObj.add("tagnames",
+//                        new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
+//                        }.getType()));
 
                 // add to bulk request
                 bulkRequest.add(new IndexRequest(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE)
@@ -81,12 +82,11 @@ public class TagSimVectors {
             } catch(NullPointerException e) {
                 LOG.error("Unable to fetch tag similarity vector for track mid='" + trackMid + "'");
             }
-        }
-
-        try {
-            HighClient.getInstance().getClient().bulk(bulkRequest);
-        } catch (IOException e) {
-            LOG.error("Failed to bulk insert tag similarity vectors : " + e.getMessage());
+            try {
+                HighClient.getInstance().getClient().bulk(bulkRequest);
+            } catch (IOException e) {
+                LOG.error("Failed to bulk insert tag similarity vectors : " + e.getMessage());
+            }
         }
 
     }
@@ -102,10 +102,15 @@ public class TagSimVectors {
                 String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
                 String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
+                int i = 0;
                 for (Tag t : topTags ) {
                     if (!tagsMap.containsKey(t.getName())) {
                         tagsMap.put(t.getName(), index);
                         index++;
+                        i++;
+                    }
+                    if (i == 1) {
+                        break;
                     }
                 }
             } catch (NullPointerException e) {

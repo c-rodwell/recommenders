@@ -30,50 +30,76 @@ public class TrackVectors {
         Terms uniqueTracksTerms = UsersHelper.getUniqueTracks();
 
         HashMap<String, Integer> usersToInts = new HashMap<>();
-        Terms uniqueUsersTerms = UsersHelper.getUniqueUsers();
 
+//        Terms uniqueUsersTerms = UsersHelper.getUniqueUsers();
+//
+//        int userCount = 0;
+//        for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
+//            String username = b.getKeyAsString();
+//            if (username.equalsIgnoreCase("x-diva")) {
+//                System.out.println("FUCK");
+//            }
+//            if (!usersToInts.containsKey(username)) {
+//                usersToInts.put(username, userCount);
+//                userCount++;
+//            }
+//        }
+
+        // Get all the usernames associated with each track
         int userCount = 0;
-        for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
-            String username = b.getKeyAsString();
-            if (!usersToInts.containsKey(username)) {
-                usersToInts.put(username, userCount);
-                userCount++;
-            }
-        }
-
-        // prepare bulk request to ES
-        BulkRequest bulkRequest = new BulkRequest();
-
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
-
-            SearchHits hits = getPlayCountsOfTracks(trackMid);
-            JsonArray vector = new JsonArray();
-
-            int[] playCountArr = new int[usersToInts.size()];
-            for (SearchHit hit : hits) {
-                int playCount = (int) hit.getSourceAsMap().get("track_playcount");
-                String username = ((String) hit.getSourceAsMap().get("username")).toLowerCase();
-                if (usersToInts.containsKey(username)) {
-                    playCountArr[usersToInts.get(username)] = playCount;
+            try {
+                SearchHits hits = getPlayCountsOfTracks(trackMid);
+                for (SearchHit hit : hits) {
+                    String username = (String) hit.getSourceAsMap().get("username");
+                    if (!usersToInts.containsKey(username)) {
+                        usersToInts.put(username, userCount);
+                        userCount++;
+                    }
                 }
+            } catch (NullPointerException e) {
+                LOG.error("Null result with track mid='" + trackMid + "'");
             }
+        }
 
-            biasEliminationBySD(playCountArr);
+        LOG.info("Begin bulk insert of track similarity vectors to ES...");
+        // prepare bulk request to ES
+        BulkRequest bulkRequest = new BulkRequest();
+        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
+            String trackMid = b.getKeyAsString();
+            try {
+                SearchHits hits = getPlayCountsOfTracks(trackMid);
+                JsonArray vector = new JsonArray();
 
-            for (int playCount : playCountArr) {
-                vector.add(playCount);
+                int[] playCountArr = new int[usersToInts.size()];
+                for (SearchHit hit : hits) {
+                    int playCount = (int) hit.getSourceAsMap().get("track_playcount");
+                    String username = (String) hit.getSourceAsMap().get("username");
+                    if (usersToInts.containsKey(username)) {
+                        playCountArr[usersToInts.get(username)] = playCount;
+                    }
+                }
+
+                biasEliminationBySD(playCountArr);
+
+                for (int playCount : playCountArr) {
+                    vector.add(playCount);
+                }
+
+                JsonObject esObj = new JsonObject();
+                esObj.addProperty("track_mid", trackMid);
+                esObj.add("vector", vector);
+
+                bulkRequest.add(new IndexRequest(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE)
+                        .source(esObj.toString(), XContentType.JSON));
+
+            } catch (NullPointerException e) {
+                LOG.error("Failed to add track vector for track mid='" + trackMid + "'");
             }
-
-            JsonObject esObj = new JsonObject();
-            esObj.addProperty("track_mid", trackMid);
-            esObj.add("vector", vector);
-
-            bulkRequest.add(new IndexRequest(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE)
-                    .source(esObj.toString(), XContentType.JSON));
 
         }
-        
+
         try {
             HighClient.getInstance().getClient().bulk(bulkRequest);
         } catch (IOException e) {
@@ -82,41 +108,31 @@ public class TrackVectors {
 
     }
 
-    private static SearchHits getPlayCountsOfTracks(String trackMid) throws IOException {
+    private static SearchHits getPlayCountsOfTracks(String trackMid) {
 
         QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder).size(Constants.ES_MAX));
-        SearchResponse response = HighClient.getInstance().getClient().search(request);
-        return response.getHits();
-
-    }
-
-    public static ArrayList<Integer> getTrackVector(String trackMid) throws IOException {
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
-        SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
-        request.source(new SearchSourceBuilder().query(queryBuilder));
-        SearchResponse response = HighClient.getInstance().getClient().search(request);
-        SearchHit[] hits = response.getHits().getHits();
-        //there should be one result, but check if there are none or multiple
-        if (hits.length == 0){
-            return null;
-        } else  if (hits.length == 1) {
-            SearchHit hit = response.getHits().getHits()[0];
-            return (ArrayList<Integer>) hit.getSourceAsMap().get("vector");
-        } else{
-            throw new IOException("invalid state: more than one track vector for same trackId");
+        SearchResponse response;
+        try {
+            response = HighClient.getInstance().getClient().search(request);
+            return response.getHits();
+        } catch (IOException e) {
+            LOG.error("Failed to get play count of track mbid='" + trackMid + "'");
         }
-    }
 
+        return null;
+
+    }
 
     /**
      * Eliminates the popularity bias by normalize the track vector
      * using calculations based on sample standard deviation
+     *
      * @param arr int array[]
      * @return int array[]
      */
-    private static int[] biasEliminationBySD(int [] arr ) {
+    private static int[] biasEliminationBySD(int[] arr) {
         int sum = 0;
         int counter = 0;
         double sumOfSquares = 0;
@@ -126,24 +142,22 @@ public class TrackVectors {
             if (arr[i] != 0) {
                 flag = true;
                 sum += arr[i];
-                counter++;                     //number of non-zero entries in the vector
+                counter++;  //number of non-zero entries in the vector
             }
         }
         if (flag) {
             double avg = sum / counter;
             // int avg = (int) (Math.round(average));
 
-
             for (int i = 0; i < arr.length; i++) {
                 if (arr[i] != 0) {
-
-                    sumOfSquares +=  Math.round(Math.pow((arr[i] - avg), 2));
+                    sumOfSquares += Math.round(Math.pow((arr[i] - avg), 2));
                 }
             }
             int sd = 0;
             try {
-                if(counter == 1)
-                    counter++;                                                        // to avoid unexpected division by zero
+                if (counter == 1)
+                    counter++;  // to avoid unexpected division by zero
                 sd = (int) (Math.ceil(Math.sqrt((sumOfSquares / (counter - 1)))));
             } catch (ArithmeticException e) {
                 System.out.println("Division by zero " + e);

@@ -27,8 +27,9 @@ public class UserHistory {
     public static int historiesPerUser = 10;
     public static int historySize = 10;
 
-    public static void makeUserHistories() throws IOException {
+    public static void makeUserHistories() {
 
+        LOG.info("Begin bulk insert of user histories to ES...");
         // prepare bulk request to ES
         BulkRequest bulkRequest = new BulkRequest();
 
@@ -44,7 +45,7 @@ public class UserHistory {
                 JsonObject currentHistoryObj = new JsonObject();
                 for (int j=1; j<=historySize; j++) {
                     if (!trackIter.hasNext()){//out of tracks - how to handle it when user history is smaller than others?
-                        System.out.println("user \""+username+"\" ran out of track history at history ="+i+", track = "+j);
+                        // System.out.println("user \""+username+"\" ran out of track history at history ="+i+", track = "+j);
                         break;
                     }
                     Track t = trackIter.next();
@@ -52,7 +53,7 @@ public class UserHistory {
                     //currentHistory.add(t.getMbid());
                     String mbid = t.getMbid();
                     //only count non-blank mbid which exist in trackVectors. if all are blank, we should eventually hit the "trackIter is out" condition
-                    if ((mbid.equals("")) || (TrackVectors.getTrackVector(mbid) == null)){
+                    if ((mbid.equals("")) || (!TrackVectorsHelper.isInTrackVectors(mbid))) {
                         j--; //repeat this index so we get the same total number
                     }
                     else {
@@ -78,6 +79,7 @@ public class UserHistory {
         } catch (IOException e) {
             LOG.error("Failed to bulk insert tag similarity vectors : " + e.getMessage());
         }
+
     }
 
 }

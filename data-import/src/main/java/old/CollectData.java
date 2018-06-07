@@ -1,9 +1,11 @@
-package crawler;
+package old;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import crawler.Constants;
+import crawler.HighClient;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
 import org.apache.log4j.Logger;
@@ -18,20 +20,24 @@ public class CollectData {
 
     private static final Logger LOG = Logger.getLogger(CollectData.class);
 
+    public static final String USERS_FILE = "users-small.json";
+    public static final int num_users = 2;
+    public static final int num_tracks = 100;
+
     public static void loadUserTopTracks() {
 
         LOG.info("Loading usernames and tracks' data for each user...");
         try {
 
             // Read the usernames
-            InputStream is = CollectData.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
+            InputStream is = CollectData.class.getClassLoader().getResourceAsStream(USERS_FILE);
             JsonReader jsonReader = new JsonReader(new InputStreamReader(is));
 
             JsonParser parser = new JsonParser();
             JsonArray data = parser.parse(jsonReader).getAsJsonArray();
 
             int docId = 0;
-            for (int i = 0; (i < data.size()) && (i < Constants.num_users); i++) { //allow running on small set of users
+            for (int i = 0; (i < data.size()) && (i < num_users); i++) { //allow running on small set of users
                 JsonObject obj = data.get(i).getAsJsonObject();
                 String username = obj.get("username").getAsString();
                 // Get top tracks for user

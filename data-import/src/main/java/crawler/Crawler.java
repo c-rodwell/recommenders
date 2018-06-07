@@ -3,6 +3,7 @@ package crawler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import com.socrata.api.HttpLowLevel;
 import com.socrata.api.Soda2Consumer;
 import com.socrata.builders.SoqlQueryBuilder;
@@ -12,12 +13,15 @@ import com.socrata.model.soql.SoqlQuery;
 import com.sun.jersey.api.client.ClientResponse;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
+import old.CollectData;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -77,7 +81,22 @@ public class Crawler {
 
     }
 
+    private static void loadUsersFromFile() {
+
+        InputStream is = CollectData.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
+        JsonReader jsonReader = new JsonReader(new InputStreamReader(is));
+
+        JsonParser parser = new JsonParser();
+        data = parser.parse(jsonReader).getAsJsonArray();
+
+    }
+
     private static void bulkInsert() {
+
+        if (data.size() == 0) {
+            LOG.info("Socrata API failed... loading from users dataset from file instead.");
+            loadUsersFromFile();
+        }
 
         LOG.info("Begin bulk insert of users dataset to ES...");
 

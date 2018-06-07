@@ -12,23 +12,23 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        LOG.info("Begin crawler program.");
+        LOG.info("Begin data import program.");
         final long startTime = System.currentTimeMillis();
 
         // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
 
-//        populateUsersIndex();
-//        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
+        populateUsersIndex();
+        LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
 
         populateTrackVectorsIndex();
         LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
 
-//        populateTagSimIndex();
-//        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
-//
-//        populateUserHistoryIndex();
-//        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+        populateTagSimIndex();
+        LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+
+        populateUserHistoryIndex();
+        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
 
         LOG.info("Closing ES clients...");
 
