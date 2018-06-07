@@ -21,13 +21,23 @@ public class TrackVectorsHelper {
      */
     public static boolean isInTrackVectors(String trackMid) {
 
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+
+        /*
+        {
+            "query": {
+            "match_phrase": {
+                "track_mid": "bc3448ee-53bb-412a-99d6-ea6cc862928a"
+            }
+          }
+        }
+        */
+        QueryBuilder queryBuilder = QueryBuilders.matchPhraseQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
         try {
             SearchResponse response = HighClient.getInstance().getClient().search(request);
             SearchHit[] hits = response.getHits().getHits();
-            if (hits.length > 1) {
+            if (hits.length > 0) {
                 return true;
             }
         } catch (IOException e) {
