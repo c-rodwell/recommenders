@@ -6,6 +6,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.PriorityQueue;
 
 public class Recommender {
 
@@ -64,7 +65,6 @@ public class Recommender {
         double tagSimWeight = 1.0 - trackSimWeight;
 
         double weightedAvg = (trackSimWeight * trackSim) + (tagSimWeight * tagSim);
-
         //System.out.println(weightedAvg);
 
         return weightedAvg;
@@ -82,6 +82,10 @@ public class Recommender {
         }
 
         HashMap<String, Double> trackScores = new HashMap();
+
+        int queueSize = 10;
+        TrackScoreComparator tsc = new TrackScoreComparator();
+        PriorityQueue<TrackScore> queue = new PriorityQueue<TrackScore>(queueSize, tsc);
 
         //get history
         //HashMap<String, String> userHistory = ESHelpers.getHistoryForUser(username, historyNum);
@@ -129,7 +133,22 @@ public class Recommender {
             //System.out.println("score for track "+currentTrackId+ " is "+similarity);
             //System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
             trackScores.put(currentTrackId, weightedAvg(similarity, tagSimilarity));
+            TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
+
+            insertToSortedQueue(queue, queueSize, ts);
         }
+
+        // Testing, print put sorted, bounded queue
+        for (int i = 0; i < queueSize; i++) {
+            System.out.println(queue.remove().toString());
+        }
+
+        try {
+            ESHelpers.close();
+        } catch (IOException e){
+            System.out.println(e.getMessage());
+
+    }
 
         //for each track in dataset:
         //for each track in user's history:
@@ -183,4 +202,20 @@ public class Recommender {
         }
         return sum;
     }
+
+    public static void insertToSortedQueue(PriorityQueue<TrackScore> queue, int size, TrackScore ts) {
+
+        if (queue.size() < size) {
+            queue.add(ts);
+        } else {
+            double scoreToAdd = ts.getScore();
+            double lowestScore = queue.peek().getScore(); // peek the head of the queue
+            if (scoreToAdd > lowestScore) {
+                queue.remove(); // remove head, which is the lowest score
+                queue.add(ts); // add new score
+            }
+        }
+
+    }
+
 }
