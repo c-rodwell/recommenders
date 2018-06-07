@@ -16,21 +16,19 @@ public class TrackVectorsHelper {
 
     /**
      * Checks whether trackMid is in trackvectors
-     * @param trackMid
-     * @return
      */
     public static boolean isInTrackVectors(String trackMid) {
 
-
-        /*
-        {
-            "query": {
-            "match_phrase": {
-                "track_mid": "bc3448ee-53bb-412a-99d6-ea6cc862928a"
-            }
-          }
-        }
-        */
+        /**
+         * Example:
+         *  {
+         *       "query": {
+         *       "match_phrase": {
+         *           "track_mid": "bc3448ee-53bb-412a-99d6-ea6cc862928a"
+         *       }
+         *     }
+         *  }
+         */
         QueryBuilder queryBuilder = QueryBuilders.matchPhraseQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));
@@ -41,7 +39,7 @@ public class TrackVectorsHelper {
                 return true;
             }
         } catch (IOException e) {
-            LOG.error("Failed to get track vector for track mid='" + trackMid + "'");
+            LOG.error("Failed to check if track mid='" + trackMid + "' is in index='" + Constants.TRACK_VECTORS_INDEX + "'");
         }
 
         return false;

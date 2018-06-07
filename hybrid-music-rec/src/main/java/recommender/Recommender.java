@@ -101,11 +101,8 @@ public class Recommender {
         ArrayList<Integer> tagVectorFromHistory;
         Integer[] historyTrackArr = new Integer[Constants.num_users];
         Integer[] historyTagArr = new Integer[Constants.num_users];
-        try{
-            userHistory = ESHelpers.getHistoryForUser(username, historyNum);
-        } catch (IOException e){
-            System.out.println("error getting data from elasticsearch: "+e.getMessage());
-        }
+
+        userHistory = ESHelpers.getHistoryForUser(username, historyNum);
 
         //loop for each track we have a vector for
         Terms uniqueTracksTerms = ESHelpers.getTracksWhichHaveVectors();
@@ -115,30 +112,26 @@ public class Recommender {
             ArrayList<Integer> currentTagVector;
             Integer[] currentTrackArr = new Integer[Constants.num_users];
             Integer[] currentTagArr = new Integer[Constants.num_users];
-            try{
-                currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
-                currentTrackArr = currentTrackVector.toArray(currentTrackArr);
 
-                currentTagVector = ESHelpers.getTagVector(currentTrackId);
-                currentTagArr = currentTagVector.toArray(currentTagArr);
-            } catch (IOException e){
-                System.out.println("error getting data from elasticsearch: "+e.getMessage());
-            }
+            currentTrackVector = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX, currentTrackId);
+            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
+
+            currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
+            currentTagArr = currentTagVector.toArray(currentTagArr);
+
             double similarity = 0.0;
             double tagSimilarity = 0.0;
 
             //loop over tracks in history
             for (int i=1; i<=userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
-                try {
-                    trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
-                    historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
 
-                    tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
-                    historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
-                } catch (IOException e){
-                    System.out.println(e.getMessage());
-                }
+                trackVectorFromHistory = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX ,historyTrackName);
+                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
+
+                tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX ,historyTrackName);
+                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
+
 
                 //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
                 similarity += trackSimilarity(currentTrackArr, historyTrackArr);

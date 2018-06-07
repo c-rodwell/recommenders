@@ -18,11 +18,11 @@ public class Main {
         // This disables the last-fm loggings
         Caller.getInstance().getLogger().setLevel(Level.OFF);
 
-        createNormalizedVectorIndex();
-        LowClient.getInstance().refreshIndex(Constants.NORMALIZED_VECTOR2_INDEX);
-
         populateUsersIndex();
         LowClient.getInstance().refreshIndex(Constants.USERS_INDEX);
+
+        createNormalizedVectorIndex();
+        LowClient.getInstance().refreshIndex(Constants.NORMALIZED_VECTOR2_INDEX);
 
         populateTrackVectorsIndex();
         LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
@@ -73,6 +73,9 @@ public class Main {
 
         // Create new index
         HighClient.getInstance().createIndex(Constants.TRACK_VECTORS_INDEX);
+
+        // Put mapping
+        LowClient.getInstance().putMapping(TrackVectors.getMapping(), Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE);
 
         TrackVectors.createTrackSimVectors();
 

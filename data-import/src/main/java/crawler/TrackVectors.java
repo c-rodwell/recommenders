@@ -18,6 +18,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class TrackVectors {
 
@@ -31,19 +32,21 @@ public class TrackVectors {
 
         HashMap<String, Integer> usersToInts = new HashMap<>();
 
-//        Terms uniqueUsersTerms = UsersHelper.getUniqueUsers();
-//
-//        int userCount = 0;
-//        for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
-//            String username = b.getKeyAsString();
-//            if (username.equalsIgnoreCase("x-diva")) {
-//                System.out.println("FUCK");
-//            }
-//            if (!usersToInts.containsKey(username)) {
-//                usersToInts.put(username, userCount);
-//                userCount++;
-//            }
-//        }
+        /*
+        Terms uniqueUsersTerms = UsersHelper.getUniqueUsers();
+
+        int userCount = 0;
+        for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
+            String username = b.getKeyAsString();
+            if (username.equalsIgnoreCase("x-diva")) {
+                System.out.println("FUCK");
+            }
+            if (!usersToInts.containsKey(username)) {
+                usersToInts.put(username, userCount);
+                userCount++;
+            }
+        }
+        */
 
         // Get all the usernames associated with each track
         int userCount = 0;
@@ -66,7 +69,7 @@ public class TrackVectors {
         LOG.info("Begin bulk insert of track similarity vectors to ES...");
         // prepare bulk request to ES
         BulkRequest bulkRequest = new BulkRequest();
-        int docId = 0;
+        BulkRequest normBulkReq = new BulkRequest();
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
             try {
@@ -95,25 +98,25 @@ public class TrackVectors {
 
                 int arr [] = biasEliminationBySD(playCountArr);
 
+                JsonArray normVector = new JsonArray();
                 for (int playCount : arr) {
-                    // System.out.print(playCount+ "palycount ");
-                    vector.add(playCount);
+                    normVector.add(playCount);
                 }
 
-                JsonObject esObj2 = new JsonObject();
-                esObj2.addProperty("track_mid", trackMid);
-                esObj2.add("vector", vector);
-                HighClient.getInstance().postJsonToES(Constants.NORMALIZED_VECTOR2_INDEX, Constants.NORMALIZED_VECTOR2_INDEX, docId, esObj2);
-                docId++;
-
+                JsonObject normEsObj = new JsonObject();
+                normEsObj.addProperty("track_mid", trackMid);
+                normEsObj.add("vector", normVector);
+                normBulkReq.add(new IndexRequest(Constants.NORMALIZED_VECTOR2_INDEX, Constants.NORMALIZED_VECTOR_2_TYPE)
+                        .source(normEsObj.toString(), XContentType.JSON));
             } catch (NullPointerException e) {
-                LOG.error("Failed to add track vector for track mid='" + trackMid + "'");
+                LOG.error("Failed to add track/normalized track vector for track mid='" + trackMid + "'");
             }
 
         }
 
         try {
             HighClient.getInstance().getClient().bulk(bulkRequest);
+            HighClient.getInstance().getClient().bulk(normBulkReq);
         } catch (IOException e) {
             LOG.error("Failed to bulk insert track similarity vectors : " + e.getMessage());
         }
@@ -183,4 +186,20 @@ public class TrackVectors {
 
         return arr;
     }
+
+    public static Map<String, Object> getMapping() {
+
+        Map<String, Object> trackmidMap = new HashMap<>();
+        trackmidMap.put("type", "keyword");
+
+        Map<String, Object> propertiesMap = new HashMap<>();
+        propertiesMap.put("track_mid", trackmidMap);
+
+        Map<String, Object> mapping = new HashMap<>();
+        mapping.put("properties", propertiesMap);
+
+        return mapping;
+
+    }
+
 }
