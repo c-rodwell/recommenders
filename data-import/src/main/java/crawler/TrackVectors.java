@@ -60,7 +60,7 @@ public class TrackVectors {
                 
             }
             for (int i=0; i<playCountArr.length; i++){
-            System.out.print(playCountArr[i]);
+            System.out.print(playCountArr[i]+" ");
             
         }
             System.out.println("");

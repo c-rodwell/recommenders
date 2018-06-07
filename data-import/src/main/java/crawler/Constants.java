@@ -35,7 +35,7 @@ public class Constants {
 
     // constants for testing
     public static final String USERS_FILE = "users-small.json";
-    public static final int num_users = 10;
+    public static final int num_users = 90;
 
     public static final int num_tracks = 100;
 

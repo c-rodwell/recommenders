@@ -35,7 +35,7 @@ public class TagSimVectors {
         HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
 
         ArrayList<String> tagnames = new ArrayList<>(Collections.nCopies(tagsMap.size(), "blank"));
-        for(Map.Entry<String, Integer> entry : tagsMap.entrySet()) {
+        for (Map.Entry<String, Integer> entry : tagsMap.entrySet()) {
             tagnames.set(entry.getValue(), entry.getKey());
         }
 
@@ -47,7 +47,7 @@ public class TagSimVectors {
             Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
 
             ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
-            for (Tag t : topTags ) {
+            for (Tag t : topTags) {
                 if (tagsMap.containsKey(t.getName())) {
                     vector.set(tagsMap.get(t.getName()), t.getCount());
                 }
@@ -58,9 +58,11 @@ public class TagSimVectors {
             esObj.addProperty("track_artist", artist);
             esObj.addProperty("track_name", trackName);
             esObj.add("vector",
-                    new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {}.getType()));
+                    new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
+                    }.getType()));
             esObj.add("tagnames",
-                    new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {}.getType()));
+                    new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
+                    }.getType()));
             bulkRequest.add(new IndexRequest(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE)
                     .source(esObj.toString(), XContentType.JSON));
         }
@@ -78,6 +80,27 @@ public class TagSimVectors {
     private static HashMap<String, Integer> collectTags(Terms uniqueTracksTerms) throws IOException {
 
         HashMap<String, Integer> tagsMap = new HashMap<String, Integer>();
+// top 20 tags, excluding "seen live" tag us subjective result 
+        tagsMap.put("rock", 0);
+        tagsMap.put("electronic", 1);
+        tagsMap.put("alternative", 2);
+        tagsMap.put("indie", 3);
+        tagsMap.put("pop", 4);
+        tagsMap.put("female vocalists", 5);
+        tagsMap.put("metal", 6);
+        tagsMap.put("alternative rock", 7);
+        tagsMap.put("classic rock", 8);
+        tagsMap.put("jazz", 9);
+        tagsMap.put("experimental", 10);
+        tagsMap.put("classic rock", 11);
+        tagsMap.put("ambient", 12);
+        tagsMap.put("folk", 13);
+        tagsMap.put("punk", 14);
+        tagsMap.put("indie rock", 15);
+        tagsMap.put("Hip-Hop", 16);
+        tagsMap.put("hard rock", 17);
+        tagsMap.put("instrumental", 18);
+        tagsMap.put("singer-songwriter", 19);
 
         int index = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
@@ -85,7 +108,7 @@ public class TagSimVectors {
             String artist = getHit(trackMid).getSourceAsMap().get("track_artist").toString();
             String trackName = getHit(trackMid).getSourceAsMap().get("track_name").toString();
             Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
-            for (Tag t : topTags ) {
+            for (Tag t : topTags) {
                 if (!tagsMap.containsKey(t.getName())) {
                     tagsMap.put(t.getName(), index);
                     index++;
@@ -102,8 +125,8 @@ public class TagSimVectors {
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.size(0);
 
-        TermsAggregationBuilder aggregationBuilder =
-                AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.num_tracks);
+        TermsAggregationBuilder aggregationBuilder
+                = AggregationBuilders.terms("unique_tracks").field("track_mid").size(Constants.num_tracks);
         builder.aggregation(aggregationBuilder);
 
         SearchRequest request = new SearchRequest(Constants.USERS_INDEX);
@@ -122,12 +145,12 @@ public class TagSimVectors {
         SearchResponse response = HighClient.getInstance().getClient().search(request);
         SearchHit[] hits = response.getHits().getHits();
         //there should be one result, but check if there are none or multiple
-        if (hits.length == 0){
+        if (hits.length == 0) {
             return null;
-        } else  if (hits.length == 1) {
+        } else if (hits.length == 1) {
             SearchHit hit = response.getHits().getHits()[0];
             return hit;
-        } else{
+        } else {
             throw new IOException("invalid state: more than one track vector for same trackId");
         }
     }
