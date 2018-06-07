@@ -53,20 +53,20 @@ public class Recommender {
 
         try {
             userHistory = ESHelpers.getHistoryForUser(username, 3);
-            currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
+            currentTrackVector = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX, currentTrackId);
             currentTrackArr = currentTrackVector.toArray(currentTrackArr);
 
-            currentTagVector = ESHelpers.getTagVector(currentTrackId);
+            currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
             currentTagArr = currentTagVector.toArray(currentTagArr);
 
             double similarity = 0.0;
             double tagSimilarity = 0.0;
             for (int i=1; i<=userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
-                trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
+                trackVectorFromHistory = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX, historyTrackName);
                 historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
 
-                tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
+                tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
                 historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
 
                 //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
@@ -76,7 +76,7 @@ public class Recommender {
             System.out.println("score for track "+currentTrackId+ " is "+similarity);
             System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
             weightedAvg(similarity, tagSimilarity);
-        } catch (IOException e){
+        } catch (NullPointerException e){
             System.out.println("error getting data from elasticsearch: "+e.getMessage());
         }
 
