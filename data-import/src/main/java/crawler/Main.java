@@ -27,11 +27,11 @@ public class Main {
         populateTrackVectorsIndex();
         LowClient.getInstance().refreshIndex(Constants.TRACK_VECTORS_INDEX);
 
-        //populateTagSimIndex();
-       // LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
+        populateTagSimIndex();
+       LowClient.getInstance().refreshIndex(Constants.TAG_SIM_INDEX);
 
-        //populateUserHistoryIndex();
-        //LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
+        populateUserHistoryIndex();
+        LowClient.getInstance().refreshIndex(Constants.HISTORY_INDEX);
         
         
 

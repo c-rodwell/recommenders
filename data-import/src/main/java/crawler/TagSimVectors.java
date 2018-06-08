@@ -82,40 +82,42 @@ public class TagSimVectors {
         HashMap<String, Integer> tagsMap = new HashMap<String, Integer>();
 // top 20 tags, excluding "seen live" tag us subjective result 
         tagsMap.put("rock", 0);
-        tagsMap.put("electronic", 1);
-        tagsMap.put("alternative", 2);
-        tagsMap.put("indie", 3);
-        tagsMap.put("pop", 4);
-        tagsMap.put("female vocalists", 5);
-        tagsMap.put("metal", 6);
-        tagsMap.put("alternative rock", 7);
-        tagsMap.put("classic rock", 8);
-        tagsMap.put("jazz", 9);
-        tagsMap.put("experimental", 10);
-        tagsMap.put("classic rock", 11);
-        tagsMap.put("ambient", 12);
-        tagsMap.put("folk", 13);
-        tagsMap.put("punk", 14);
-        tagsMap.put("indie rock", 15);
-        tagsMap.put("Hip-Hop", 16);
-        tagsMap.put("hard rock", 17);
-        tagsMap.put("instrumental", 18);
-        tagsMap.put("singer-songwriter", 19);
+        tagsMap.put("electronic", 0);
+        tagsMap.put("alternative", 0);
+        tagsMap.put("indie", 0);
+        tagsMap.put("pop", 0);
+        tagsMap.put("female vocalists", 0);
+        tagsMap.put("metal", 0);
+        tagsMap.put("alternative rock", 0);
+        tagsMap.put("classic rock", 0);
+        tagsMap.put("jazz", 0);
+        tagsMap.put("experimental", 0);
+        tagsMap.put("classic rock", 0);
+        tagsMap.put("ambient", 0);
+        tagsMap.put("folk", 0);
+        tagsMap.put("punk", 0);
+        tagsMap.put("indie rock", 0);
+        tagsMap.put("Hip-Hop", 0);
+        tagsMap.put("hard rock", 0);
+        tagsMap.put("instrumental", 0);
+        tagsMap.put("singer-songwriter", 0);
 
-        int index = 0;
+        //int index = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String trackMid = b.getKeyAsString();
             String artist = getHit(trackMid).getSourceAsMap().get("track_artist").toString();
             String trackName = getHit(trackMid).getSourceAsMap().get("track_name").toString();
             Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
             for (Tag t : topTags) {
-                if (!tagsMap.containsKey(t.getName())) {
-                    tagsMap.put(t.getName(), index);
-                    index++;
-                }
+               if (tagsMap.containsKey(t.getName())){
+                   tagsMap.put(t.getName(), t.getCount());
+               }
+//                if (!tagsMap.containsKey(t.getName())) {
+//                    tagsMap.put(t.getName(), index);
+//                    index++;
+//                }
             }
         }
-
         return tagsMap;
 
     }
