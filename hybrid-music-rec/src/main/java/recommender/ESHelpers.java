@@ -68,6 +68,24 @@ public class ESHelpers {
         return null;
     }
 
+    public static int getUserHistorySize(String username) {
+
+        QueryBuilder queryBuilder = QueryBuilders.matchPhraseQuery("username", username);
+        SearchRequest request = new SearchRequest(Constants.HISTORY_INDEX);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        try {
+            SearchResponse response = client.search(request);
+            SearchHit[] hits = response.getHits().getHits();
+            return hits.length;
+        } catch (IOException e) {
+            LOG.error("Failed to get history size of username='" + username + "' from index='" + Constants.HISTORY_INDEX + "'");
+        }
+
+        return 0;
+    }
+
+
+
     public static void close() throws IOException {
         client.close();
     }

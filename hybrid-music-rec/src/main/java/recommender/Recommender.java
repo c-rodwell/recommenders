@@ -5,6 +5,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
@@ -38,21 +39,46 @@ public class Recommender {
 //        System.out.println("adjusted similarity of v1 relative to v3 is: "+asim31);
 //        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
 
-        //test getting user history
+        // are we passing one user for every run?
         String username = "rockstr";
-        String trackid = "0f9201b6-6989-476e-b11e-fe3c0f3d4dc1"; //track listened to by h0bbel
 
-        HashMap<String, String> history = ESHelpers.getHistoryForUser(username, 1);
-        HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
-        HashMap<String, Double> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
-        HashMap<String, Double> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
-        HashMap<String, Double> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
+        ArrayList<String> hiddenTracks = new ArrayList<>();
+        int userHistorySize = ESHelpers.getUserHistorySize(username);
+        if (userHistorySize == 0) {
+            System.out.println("User " + username + " has no listening history.");
+        } else {
+            System.out.println("User " + username + " has " + userHistorySize + " listening history.");
+            int numOfHistToEval = 3;
+            for (int i = 1; i <= userHistorySize && i <= numOfHistToEval; i++) {
+                HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
+                String lastTrackKey = Integer.toString(history.size()); // get last track - this is the hidden track
+                hiddenTracks.add(history.get(lastTrackKey));
+                System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
 
-        System.out.println("for user = "+username+" , trackId = "+trackid+" :");
-        System.out.println("no adjust:                  score = "+noAdjustScores.get(trackid));
-        System.out.println("adjust before:              score = "+AdjustBeforeScores.get(trackid));
-        System.out.println("adjust after:               score = "+AdjustAfterScores.get(trackid));
-        System.out.println("adjust before and after:    score = "+AdjustBeforeAndAfterScores.get(trackid));
+                // commented code below goes here?
+                HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+                System.out.println(noAdjustScores.values().toString());
+
+                // what to do next?
+
+
+            }
+        }
+
+        //test getting user history
+//        String trackid = "0f9201b6-6989-476e-b11e-fe3c0f3d4dc1"; //track listened to by h0bbel
+//
+//        HashMap<String, String> history = ESHelpers.getHistoryForUser(username, 1);
+//        HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+//        HashMap<String, Double> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
+//        HashMap<String, Double> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
+//        HashMap<String, Double> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
+//
+//        System.out.println("for user = "+username+" , trackId = "+trackid+" :");
+//        System.out.println("no adjust:                  score = "+noAdjustScores.get(trackid));
+//        System.out.println("adjust before:              score = "+AdjustBeforeScores.get(trackid));
+//        System.out.println("adjust after:               score = "+AdjustAfterScores.get(trackid));
+//        System.out.println("adjust before and after:    score = "+AdjustBeforeAndAfterScores.get(trackid));
         ESHelpers.close();
         System.exit(0);
     }
