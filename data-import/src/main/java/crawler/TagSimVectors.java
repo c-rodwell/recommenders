@@ -39,7 +39,28 @@ public class TagSimVectors {
             return;
         }
 
-        HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
+        // HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
+        HashMap<String, Integer> tagsMap = new HashMap<>();
+        tagsMap.put("rock", 0);
+        tagsMap.put("electronic", 1);
+        tagsMap.put("alternative", 2);
+        tagsMap.put("indie", 3);
+        tagsMap.put("pop", 4);
+        tagsMap.put("female vocalists", 5);
+        tagsMap.put("metal", 6);
+        tagsMap.put("alternative rock", 7);
+        tagsMap.put("classic rock", 8);
+        tagsMap.put("jazz", 9);
+        tagsMap.put("experimental", 10);
+        tagsMap.put("ambient", 11);
+        tagsMap.put("folk", 12);
+        tagsMap.put("punk", 13);
+        tagsMap.put("indie rock", 14);
+        tagsMap.put("Hip-Hop", 15);
+        tagsMap.put("hard rock", 16);
+        tagsMap.put("instrumental", 17);
+        tagsMap.put("singer-songwriter", 18);
+        tagsMap.put("black metal", 19);
 
         // store the tag names here
         ArrayList<String> tagnames = new ArrayList<>(Collections.nCopies(tagsMap.size(), "-"));
@@ -71,9 +92,9 @@ public class TagSimVectors {
                 esObj.add("vector",
                         new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
                         }.getType()));
-//                esObj.add("tagnames",
-//                        new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
-//                        }.getType()));
+                esObj.add("tagnames",
+                        new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
+                        }.getType()));
 
                 // add to bulk request
                 bulkRequest.add(new IndexRequest(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE)
@@ -91,6 +112,7 @@ public class TagSimVectors {
 
     }
 
+    // Since we're using the overall top 20 tags, we don't need this method anymore
     private static HashMap<String, Integer> collectTags(Terms uniqueTracksTerms) {
 
         HashMap<String, Integer> tagsMap = new HashMap<>();
@@ -102,15 +124,9 @@ public class TagSimVectors {
                 String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
                 String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
-                int i = 0;
-                for (Tag t : topTags ) {
-                    if (!tagsMap.containsKey(t.getName())) {
+                for (Tag t : topTags) {
+                    if (tagsMap.containsKey(t.getName())) {
                         tagsMap.put(t.getName(), index);
-                        index++;
-                        i++;
-                    }
-                    if (i == 1) {
-                        break;
                     }
                 }
             } catch (NullPointerException e) {
