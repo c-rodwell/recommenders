@@ -39,75 +39,58 @@ public class Recommender {
 //        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
 
         //test getting user history
-
         String username = "rockstr";
-        String currentTrackId = "25a15376-38aa-495c-af02-734170454a1e";
-        HashMap<String, Double> scores = recommendTracksForUser(username, 1, 10);
+        String trackid = "0f9201b6-6989-476e-b11e-fe3c0f3d4dc1"; //track listened to by h0bbel
 
-//        try {
-//            userHistory = ESHelpers.getHistoryForUser(username, 3);
-//            currentTrackVector = ESHelpers.getTrackVector(currentTrackId);
-//            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
-//
-//            currentTagVector = ESHelpers.getTagVector(currentTrackId);
-//            currentTagArr = currentTagVector.toArray(currentTagArr);
-//
-//            double similarity = 0.0;
-//            double tagSimilarity = 0.0;
-//            for (int i=1; i<=userHistory.size(); i++) {
-//                String historyTrackName = userHistory.get(Integer.toString(i));
-//                trackVectorFromHistory = ESHelpers.getTrackVector(historyTrackName);
-//                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
-//
-//                tagVectorFromHistory = ESHelpers.getTagVector(historyTrackName);
-//                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
-//
-//                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
-//                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
-//                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
-//            }
-//            System.out.println("score for track "+currentTrackId+ " is "+similarity);
-//            System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
-//            weightedAvg(similarity, tagSimilarity);
-//        } catch (IOException e){
-//            System.out.println("error getting data from elasticsearch: "+e.getMessage());
-//        }
-//
-//        ESHelpers.close();
+        HashMap<String, String> history = ESHelpers.getHistoryForUser(username, 1);
+        HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+        HashMap<String, Double> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
+        HashMap<String, Double> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
+        HashMap<String, Double> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
 
+        System.out.println("for user = "+username+" , trackId = "+trackid+" :");
+        System.out.println("no adjust:                  score = "+noAdjustScores.get(trackid));
+        System.out.println("adjust before:              score = "+AdjustBeforeScores.get(trackid));
+        System.out.println("adjust after:               score = "+AdjustAfterScores.get(trackid));
+        System.out.println("adjust before and after:    score = "+AdjustBeforeAndAfterScores.get(trackid));
+        ESHelpers.close();
         System.exit(0);
     }
 
     public static double weightedAvg(double trackSim, double tagSim) {
 
-        double trackSimWeight = 0.6;
-        double tagSimWeight = 0.4;
+        double trackSimWeight = Constants.TRACK_SIM_WEIGHT;
+        double tagSimWeight = 1.0 - trackSimWeight;
 
         double weightedAvg = (trackSimWeight * trackSim) + (tagSimWeight * tagSim);
-
-        // System.out.println(weightedAvg);
+        //System.out.println(weightedAvg);
 
         return weightedAvg;
     }
 
     //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
     //weighted sum of different cosine distance similarity functions on user's listening history
-    public static HashMap<String, Double> recommendTracksForUser(String username, int historyNum, int numToRecommend){
-        String[] tracks = new String[numToRecommend];
-        HashMap<String, Double> trackScores = new HashMap<String, Double>();
+    public static HashMap<String, Double> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend, boolean adjust_before, boolean adjust_after){
+        //String[] tracks = new String[numToRecommend];
+        String trackIndexToUse;
+        if (adjust_before){
+            trackIndexToUse = Constants.NORMALIZED_VECTOR2_INDEX;
+        } else{
+            trackIndexToUse = Constants.TRACK_VECTORS_INDEX;
+        }
+
+        HashMap<String, Double> trackScores = new HashMap();
 
         int queueSize = 10;
         TrackScoreComparator tsc = new TrackScoreComparator();
         PriorityQueue<TrackScore> queue = new PriorityQueue<TrackScore>(queueSize, tsc);
 
         //get history
-        HashMap<String, String> userHistory = new HashMap<String, String>();
+        //HashMap<String, String> userHistory = ESHelpers.getHistoryForUser(username, historyNum);
         ArrayList<Integer> trackVectorFromHistory;
         ArrayList<Integer> tagVectorFromHistory;
         Integer[] historyTrackArr = new Integer[Constants.num_users];
         Integer[] historyTagArr = new Integer[Constants.num_users];
-
-        userHistory = ESHelpers.getHistoryForUser(username, historyNum);
 
         //loop for each track we have a vector for
         Terms uniqueTracksTerms = ESHelpers.getTracksWhichHaveVectors();
@@ -118,7 +101,7 @@ public class Recommender {
             Integer[] currentTrackArr = new Integer[Constants.num_users];
             Integer[] currentTagArr = new Integer[Constants.num_users];
 
-            currentTrackVector = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX, currentTrackId);
+            currentTrackVector = ESHelpers.getVector(trackIndexToUse, currentTrackId);
             currentTrackArr = currentTrackVector.toArray(currentTrackArr);
 
             currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
@@ -131,15 +114,18 @@ public class Recommender {
             for (int i=1; i<=userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
 
-                trackVectorFromHistory = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX ,historyTrackName);
+                trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse ,historyTrackName);
                 historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
 
                 tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX ,historyTrackName);
                 historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
 
-
                 //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
-                similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+                if (adjust_after) {
+                    similarity += adjustedTrackSimilarity(currentTrackArr, historyTrackArr);
+                } else{
+                    similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+                }
                 tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
             }
             //System.out.println("score for track "+currentTrackId+ " is "+similarity);
@@ -155,25 +141,9 @@ public class Recommender {
             System.out.println(queue.remove().toString());
         }
 
-        try {
-            ESHelpers.close();
-        } catch (IOException e){
-            System.out.println(e.getMessage());
-
-    }
-
-        //for each track in dataset:
-        //for each track in user's history:
-        //compute similarity, add it to relevance score for the track
-        //maybe compute similarities first, put in ES)
-        //return tracks with most relevance
         return trackScores;
     }
 
-    public double relevanceOfTrack(String user, String trackId, String[] history){
-        double total = 0.0;
-        return total;
-    }
 
     //similarity of two tracks = cosine distance of the user listening vectors
     //subtract from each vector : "the average number of times the user j listened to a track"
@@ -187,6 +157,7 @@ public class Recommender {
         return cosineDistance(track1, track2);
     }
 
+    //adjust for popularity by dividing by track2's sum - then make sure track is from history
     public static double adjustedTrackSimilarity(Integer[] track1, Integer[] track2){
         return cosineDistance(track1, track2)/sum(track2);
     }
