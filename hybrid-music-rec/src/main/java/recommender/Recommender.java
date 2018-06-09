@@ -56,8 +56,8 @@ public class Recommender {
                 System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
 
                 // commented code below goes here?
-                HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
-                System.out.println(noAdjustScores.values().toString());
+                //HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+                //System.out.println(noAdjustScores.values().toString());
 
                 // what to do next?
 
@@ -96,7 +96,7 @@ public class Recommender {
 
     //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
     //weighted sum of different cosine distance similarity functions on user's listening history
-    public static HashMap<String, Double> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend, boolean adjust_before, boolean adjust_after){
+    public static PriorityQueue<TrackScore>  recommendTracksForUser(HashMap<String, String> userHistory, int queueSize, boolean adjust_before, boolean adjust_after){
         //String[] tracks = new String[numToRecommend];
         String trackIndexToUse;
         if (adjust_before){
@@ -105,9 +105,7 @@ public class Recommender {
             trackIndexToUse = Constants.TRACK_VECTORS_INDEX;
         }
 
-        HashMap<String, Double> trackScores = new HashMap();
 
-        int queueSize = 10;
         TrackScoreComparator tsc = new TrackScoreComparator();
         PriorityQueue<TrackScore> queue = new PriorityQueue<TrackScore>(queueSize, tsc);
 
@@ -156,7 +154,7 @@ public class Recommender {
             }
             //System.out.println("score for track "+currentTrackId+ " is "+similarity);
             //System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
-            trackScores.put(currentTrackId, weightedAvg(similarity, tagSimilarity));
+            //trackScores.put(currentTrackId, weightedAvg(similarity, tagSimilarity));
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
 
             insertToSortedQueue(queue, queueSize, ts);
@@ -167,7 +165,7 @@ public class Recommender {
             System.out.println(queue.remove().toString());
         }
 
-        return trackScores;
+        return queue;
     }
 
 

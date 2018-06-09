@@ -31,4 +31,8 @@ public class Constants {
 
     public static final String USERS_FILE = "users-small.json";
 
+    public static int RECENT_TRACKS_SIZE = 1000;
+    public static int HISTORIES_PER_USER = 10;
+    public static int HISTORY_SIZE = 10;
+
 }

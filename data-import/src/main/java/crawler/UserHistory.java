@@ -23,9 +23,6 @@ public class UserHistory {
 
     private static final Logger LOG = Logger.getLogger(UserHistory.class);
 
-    public static int recentTracksSize = 1000;
-    public static int historiesPerUser = 10;
-    public static int historySize = 10;
 
     public static void makeUserHistories() {
 
@@ -38,12 +35,12 @@ public class UserHistory {
             JsonObject userHistoriesObj = new JsonObject();
 
             String username = b.getKeyAsString();
-            PaginatedResult<Track> recentTracksPage = User.getRecentTracks(username,1, recentTracksSize, Constants.LASTFM_APIKey);
+            PaginatedResult<Track> recentTracksPage = User.getRecentTracks(username,1, Constants.RECENT_TRACKS_SIZE, Constants.LASTFM_APIKey);
             Iterator<Track> trackIter = recentTracksPage.iterator();
-            for (int i=1; i<=historiesPerUser; i++) {
+            for (int i=1; i<=Constants.HISTORIES_PER_USER; i++) {
                 // ArrayList<String> currentHistory = new ArrayList<String>();
                 JsonObject currentHistoryObj = new JsonObject();
-                for (int j=1; j<=historySize; j++) {
+                for (int j=1; j<=Constants.HISTORY_SIZE; j++) {
                     if (!trackIter.hasNext()){//out of tracks - how to handle it when user history is smaller than others?
                         // System.out.println("user \""+username+"\" ran out of track history at history ="+i+", track = "+j);
                         break;
