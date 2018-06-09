@@ -17,53 +17,61 @@ public class Recommender {
 
         LOG.info("Start recommender");
 
-        //for now this is just testing
-//        Integer[] v1 = {0,0,1,2,3};
-//        Integer[] v2 = {3,4,0,0,0};
-//        Integer[] v3 = {1,1,1,3,2};
-//
-//        System.out.println("|v1|^2 = "+dotProduct(v1, v1));
-//        System.out.println("|v2|^2 = "+dotProduct(v2, v2));
-//        System.out.println("|v3|^2 = "+dotProduct(v3, v3));
-//        //simple similarity - commutative
-//        double sim12 = trackSimilarity(v1, v2);
-//        double sim13 = trackSimilarity(v1, v3);
-//        double sim23 = trackSimilarity(v2, v3);
-//        System.out.println("similarity of v1 and v2 is: "+sim12);
-//        System.out.println("similarity of v1 and v3 is: "+sim13);
-//        System.out.println("similarity of v2 and v3 is: "+sim23);
-//
-//        //adjusted similarities relative to v3:
-//        double asim31 = adjustedTrackSimilarity(v3, v1);
-//        double asim32 = adjustedTrackSimilarity(v3, v2);
-//        System.out.println("adjusted similarity of v1 relative to v3 is: "+asim31);
-//        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
+
+
+
+        //test cosines and similarity
+        Integer[] v1 = {0,0,1,2,3};
+        //Integer[] 3v1 = {0,0,3,6,9};
+        Integer[] v2 = {3,4,0,0,0};
+        Integer[] v3 = {1,1,1,3,2};
+
+        System.out.println("|v1|^2 = "+dotProduct(v1, v1));
+        System.out.println("|v2|^2 = "+dotProduct(v2, v2));
+        System.out.println("|v3|^2 = "+dotProduct(v3, v3));
+        //simple similarity - commutative
+        double sim12 = trackSimilarity(v1, v2);
+        double sim13 = trackSimilarity(v1, v3);
+        double sim23 = trackSimilarity(v2, v3);
+        System.out.println("similarity of v1 and v2 is: "+sim12);
+        System.out.println("similarity of v1 and v3 is: "+sim13);
+        System.out.println("similarity of v2 and v3 is: "+sim23);
+
+        //adjusted similarities relative to v3:
+        double asim31 = adjustedTrackSimilarity(v3, v1);
+        double asim32 = adjustedTrackSimilarity(v3, v2);
+        System.out.println("adjusted similarity of v1 relative to v3 is: "+asim31);
+        System.out.println("adjusted similarity of v2 relative to v3 is: "+asim32);
+
+        System.out.println("cosine similiarites:");
+        System.out.println("sim:");
+        System.out.println("cosine similiarites:");
 
         // are we passing one user for every run?
-        String username = "rockstr";
-
-        ArrayList<String> hiddenTracks = new ArrayList<>();
-        int userHistorySize = ESHelpers.getUserHistorySize(username);
-        if (userHistorySize == 0) {
-            System.out.println("User " + username + " has no listening history.");
-        } else {
-            System.out.println("User " + username + " has " + userHistorySize + " listening history.");
-            int numOfHistToEval = 3;
-            for (int i = 1; i <= userHistorySize && i <= numOfHistToEval; i++) {
-                HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
-                String lastTrackKey = Integer.toString(history.size()); // get last track - this is the hidden track
-                hiddenTracks.add(history.get(lastTrackKey));
-                System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
-
-                // commented code below goes here?
-                //HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
-                //System.out.println(noAdjustScores.values().toString());
-
-                // what to do next?
-
-
-            }
-        }
+//        String username = "rockstr";
+//
+//        ArrayList<String> hiddenTracks = new ArrayList<>();
+//        int userHistorySize = ESHelpers.getUserHistorySize(username);
+//        if (userHistorySize == 0) {
+//            System.out.println("User " + username + " has no listening history.");
+//        } else {
+//            System.out.println("User " + username + " has " + userHistorySize + " listening history.");
+//            int numOfHistToEval = 3;
+//            for (int i = 1; i <= userHistorySize && i <= numOfHistToEval; i++) {
+//                HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
+//                String lastTrackKey = Integer.toString(history.size()); // get last track - this is the hidden track
+//                hiddenTracks.add(history.get(lastTrackKey));
+//                System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
+//
+//                // commented code below goes here?
+//                //HashMap<String, Double> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+//                //System.out.println(noAdjustScores.values().toString());
+//
+//                // what to do next?
+//
+//
+//            }
+//        }
 
         //test getting user history
 //        String trackid = "0f9201b6-6989-476e-b11e-fe3c0f3d4dc1"; //track listened to by h0bbel
@@ -158,11 +166,6 @@ public class Recommender {
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
 
             insertToSortedQueue(queue, queueSize, ts);
-        }
-
-        // Testing, print put sorted, bounded queue
-        for (int i = 0; i < queueSize; i++) {
-            System.out.println(queue.remove().toString());
         }
 
         return queue;
