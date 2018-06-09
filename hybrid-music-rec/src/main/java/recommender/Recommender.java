@@ -12,6 +12,7 @@ public class Recommender {
 
     private static final Logger LOG = Logger.getLogger(Recommender.class);
 
+    /*
     public static void main(String[] args) throws IOException {
 
         LOG.info("Start recommender");
@@ -39,19 +40,20 @@ public class Recommender {
 
                 PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser(history, 10, false, false);
                 System.out.println("---------------------------------------");
-//                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
-//                System.out.println("---------------------------------------");
-//                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
-//                System.out.println("---------------------------------------");
-//                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
+                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
+                System.out.println("---------------------------------------");
+                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
+                System.out.println("---------------------------------------");
+                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
 
             }
         }
         ESHelpers.close();
         System.exit(0);
     }
+    */
 
-    public static double weightedAvg(double trackSim, double tagSim) {
+    private static double weightedAvg(double trackSim, double tagSim) {
 
         double trackSimWeight = Constants.TRACK_SIM_WEIGHT;
         double tagSimWeight = 1.0 - trackSimWeight;
@@ -60,7 +62,6 @@ public class Recommender {
 
         return weightedAvg;
     }
-
 
     public static PriorityQueue<TrackScore> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend,
                                                                    boolean adjust_before, boolean adjust_after) {
@@ -75,16 +76,12 @@ public class Recommender {
 
         int queueSize = numToRecommend;
         TrackScoreComparator tsc = new TrackScoreComparator();
-        PriorityQueue<TrackScore> queue = new PriorityQueue<TrackScore>(queueSize, tsc);
-
-        ArrayList<Integer> trackVectorFromHistory;
-        ArrayList<Integer> tagVectorFromHistory;
+        PriorityQueue<TrackScore> queue = new PriorityQueue<>(queueSize, tsc);
 
         // loop for each track we have a vector for
         Terms uniqueTracksTerms = ESHelpers.getTracksWhichHaveVectors();
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String currentTrackId = b.getKeyAsString();
-            // System.out.println("Current track id: " + currentTrackId);
 
             ArrayList<Integer> currentTrackVector = ESHelpers.getVector(trackIndexToUse, currentTrackId);
             ArrayList<Integer> currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
@@ -95,8 +92,9 @@ public class Recommender {
             // loop over tracks in history
             for (int i = 1; i <= userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
-                trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse, historyTrackName);
-                tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
+
+                ArrayList<Integer> trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse, historyTrackName);
+                ArrayList<Integer> tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
 
                 if (adjust_after) {
                     similarity += adjustedTrackSimilarity(currentTrackVector, trackVectorFromHistory);
@@ -109,7 +107,6 @@ public class Recommender {
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
             insertToSortedQueue(queue, queueSize, ts);
         }
-
 
         // Testing, print out sorted, bounded queue
         for (int i = 0; i < queueSize; i++) {
@@ -143,7 +140,7 @@ public class Recommender {
         return dotProduct(v1, v2) / denominator;
     }
 
-    private static int sum(ArrayList<Integer> v) {
+    public static int sum(ArrayList<Integer> v) {
         int s = 0;
         for (int i = 0; i < v.size(); i++) {
             s += v.get(i);
