@@ -5,7 +5,6 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
@@ -22,6 +21,7 @@ public class Recommender {
         int numOfHistToEval = 1;
 
         int userHistorySize = ESHelpers.getUserHistorySize(username);
+        System.out.println(userHistorySize);
         if (userHistorySize == 0) {
             System.out.println("User " + username + " has no listening history.");
         } else {
@@ -115,7 +115,6 @@ public class Recommender {
         for (int i = 0; i < queueSize; i++) {
             System.out.println(queue.remove().toString());
         }
-
 
         return queue;
     }
