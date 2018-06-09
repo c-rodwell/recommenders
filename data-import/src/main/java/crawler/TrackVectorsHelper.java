@@ -5,6 +5,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
@@ -43,6 +45,26 @@ public class TrackVectorsHelper {
         }
 
         return false;
+
+    }
+
+    public static SearchHit getHit(String index, String trackMid) {
+
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
+        SearchRequest request = new SearchRequest(index);
+        request.source(new SearchSourceBuilder().query(queryBuilder));
+        SearchResponse response;
+        try {
+            response = HighClient.getInstance().getClient().search(request);
+            SearchHit[] hits = response.getHits().getHits();
+            if (hits.length > 0) {
+                return response.getHits().getHits()[0];
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to fetch track_mid='" + trackMid + "' from ES index='" + index + "'");
+        }
+
+        return null;
 
     }
 

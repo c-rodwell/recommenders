@@ -7,15 +7,10 @@ import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.*;
@@ -85,28 +80,46 @@ public class TagSimVectors {
                     }
                 }
 
-                JsonObject esObj = new JsonObject();
-                esObj.addProperty("track_mid", trackMid);
-                esObj.addProperty("track_artist", artist);
-                esObj.addProperty("track_name", trackName);
-                esObj.add("vector",
-                        new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
-                        }.getType()));
-                esObj.add("tagnames",
-                        new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
-                        }.getType()));
+                if (!isAllZeroes(vector)) {
 
-                // add to bulk request
-                bulkRequest.add(new IndexRequest(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE)
-                        .source(esObj.toString(), XContentType.JSON));
+                    JsonObject esObj = new JsonObject();
+                    esObj.addProperty("track_mid", trackMid);
+                    esObj.addProperty("track_artist", artist);
+                    esObj.addProperty("track_name", trackName);
+                    esObj.add("vector",
+                            new Gson().toJsonTree(vector, new TypeToken<List<Integer>>() {
+                            }.getType()));
+                    esObj.add("tagnames",
+                            new Gson().toJsonTree(tagnames, new TypeToken<List<Integer>>() {
+                            }.getType()));
+
+                    // add to bulk request
+                    bulkRequest.add(new IndexRequest(Constants.TAG_SIM_INDEX, Constants.TAG_SIM_TYPE)
+                            .source(esObj.toString(), XContentType.JSON));
+                } else {
+                    // the tag vectors for some tracks will inevitably be all zeroes if the none of their tags match with the top 20
+                    // need to skip those tracks here, and also delete them from the the trackvectors and normalized-vector-2 indices
+                    String esId = TrackVectorsHelper.getHit(Constants.TRACK_VECTORS_INDEX, trackMid).getId();
+                    String normEsId = TrackVectorsHelper.getHit(Constants.NORMALIZED_VECTOR2_INDEX, trackMid).getId();
+                    DeleteRequest delRequest = new DeleteRequest(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE, esId);
+                    DeleteRequest normDelRequest = new DeleteRequest(Constants.NORMALIZED_VECTOR2_INDEX, Constants.NORMALIZED_VECTOR_2_TYPE, normEsId);
+                    try {
+                        HighClient.getInstance().getClient().delete(delRequest);
+                        HighClient.getInstance().getClient().delete(normDelRequest);
+                    } catch (IOException e) {
+                        LOG.error("Failed to delete track with all-zero tag vectors.");
+                    }
+                }
 
             } catch(NullPointerException e) {
                 LOG.error("Unable to fetch tag similarity vector for track mid='" + trackMid + "'");
             }
-            try {
-                HighClient.getInstance().getClient().bulk(bulkRequest);
-            } catch (IOException e) {
-                LOG.error("Failed to bulk insert tag similarity vectors : " + e.getMessage());
+            if (bulkRequest.estimatedSizeInBytes() > 0) {
+                try {
+                    HighClient.getInstance().getClient().bulk(bulkRequest);
+                } catch (IOException e) {
+                    LOG.error("Failed to bulk insert tag similarity vectors : " + e.getMessage());
+                }
             }
         }
 
@@ -135,6 +148,17 @@ public class TagSimVectors {
         }
 
         return tagsMap;
+
+    }
+
+    private static boolean isAllZeroes(ArrayList<Integer>  vector) {
+
+        for (Integer v : vector) {
+            if (v > 0) {
+                return false;
+            }
+        }
+        return true;
 
     }
 
