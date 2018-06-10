@@ -5,6 +5,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
@@ -63,7 +64,7 @@ public class Recommender {
         return weightedAvg;
     }
 
-    public static PriorityQueue<TrackScore> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend,
+    public static PriorityQueue<TrackScore> recommendTracksForUser(String hiddenTrack, HashMap<String, String> userHistory, int numToRecommend,
                                                                    boolean adjust_before, boolean adjust_after) {
 
         String trackIndexToUse;
@@ -96,22 +97,42 @@ public class Recommender {
                 ArrayList<Integer> trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse, historyTrackName);
                 ArrayList<Integer> tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
 
+                double sim = 0.0;
                 if (adjust_after) {
                     similarity += adjustedTrackSimilarity(currentTrackVector, trackVectorFromHistory);
                 } else {
-                    similarity += trackSimilarity(currentTrackVector, trackVectorFromHistory);
+                    sim = trackSimilarity(currentTrackVector, trackVectorFromHistory);
+                    similarity += sim;
                 }
                 tagSimilarity += tagSimilarity(currentTagVector, tagVectorFromHistory);
+
+                if (hiddenTrack.equals(currentTrackId)) {
+                    if (hiddenTrack.equals(historyTrackName)) {
+                        System.out.println("Found hidden track : " + hiddenTrack);
+                        System.out.println(sim);
+                        System.out.println(Arrays.asList(currentTrackVector).toString());
+                        System.out.println(Arrays.asList(trackVectorFromHistory).toString());
+                    }
+                }
+
+            }
+
+            if (hiddenTrack.equals(currentTrackId)) {
+                System.out.println(similarity);
             }
 
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
             insertToSortedQueue(queue, queueSize, ts);
         }
 
+
         // Testing, print out sorted, bounded queue
+        /*
         for (int i = 0; i < queueSize; i++) {
             System.out.println(queue.remove().toString());
         }
+        */
+
 
         return queue;
     }
