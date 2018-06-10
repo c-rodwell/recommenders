@@ -11,14 +11,9 @@ public class Constants {
     public static final String TRACK_VECTORS_INDEX = "trackvectors";
     public static final String TAG_SIM_INDEX = "tag-sim";
     public static final String HISTORY_INDEX = "userhistory";
-
     public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
-    public static final String NORMALIZED_VECTOR_2_TYPE = "norm-vector-2";
 
-    public static final int num_users = 2;
-    public static final int num_tracks = 100;
-
-    //recommender params
+    // recommender params
     public static final double TRACK_SIM_WEIGHT = 0.6;
 
 }

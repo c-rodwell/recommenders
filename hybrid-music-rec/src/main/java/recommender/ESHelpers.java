@@ -76,7 +76,8 @@ public class ESHelpers {
         try {
             SearchResponse response = client.search(request);
             SearchHit[] hits = response.getHits().getHits();
-            return hits.length;
+            HashMap historyObj = (HashMap) hits[0].getSourceAsMap().get("histories");
+            return historyObj.size();
         } catch (IOException e) {
             LOG.error("Failed to get history size of username='" + username + "' from index='" + Constants.HISTORY_INDEX + "'");
         }

@@ -9,22 +9,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
+import static java.util.Arrays.asList;
+
 public class Recommender {
 
     private static final Logger LOG = Logger.getLogger(Recommender.class);
+
 
     public static void main(String[] args) throws IOException {
 
         LOG.info("Start recommender");
 
 
-
-
         //test cosines and similarity
-        Integer[] v1 = {0,0,1,2,3};
+        ArrayList<Integer> v1 = new ArrayList(asList(0,0,1,2,3));
         //Integer[] 3v1 = {0,0,3,6,9};
-        Integer[] v2 = {3,4,0,0,0};
-        Integer[] v3 = {1,1,1,3,2};
+        Integer[] v2 = new ArrayList(asList(3,4,0,0,0);
+        Integer[] v3 = new ArrayList(asList(1,1,1,3,2);
 
         System.out.println("|v1|^2 = "+dotProduct(v1, v1));
         System.out.println("|v2|^2 = "+dotProduct(v2, v2));
@@ -87,84 +88,94 @@ public class Recommender {
 //        System.out.println("adjust before:              score = "+AdjustBeforeScores.get(trackid));
 //        System.out.println("adjust after:               score = "+AdjustAfterScores.get(trackid));
 //        System.out.println("adjust before and after:    score = "+AdjustBeforeAndAfterScores.get(trackid));
+        String username = "rockstr";
+        HashMap<Integer, String> hiddenTracks = new HashMap<>();
+        int numOfHistToEval = 1;
+
+        int userHistorySize = ESHelpers.getUserHistorySize(username);
+        System.out.println(userHistorySize);
+        if (userHistorySize == 0) {
+            System.out.println("User " + username + " has no listening history.");
+        } else {
+            System.out.println("User " + username + " has " + userHistorySize + " listening history.");
+
+            for (int i = 1; i <= userHistorySize && i <= numOfHistToEval; i++) {
+
+                HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
+
+                String lastTrackKey = Integer.toString(history.size()); // get last track - this is the hidden track
+                hiddenTracks.put(i, history.get(lastTrackKey));
+
+                System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
+                history.remove(lastTrackKey); // remove history from history list
+
+                PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+                System.out.println("---------------------------------------");
+                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
+                System.out.println("---------------------------------------");
+                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
+                System.out.println("---------------------------------------");
+                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
+
+            }
+        }
+
         ESHelpers.close();
         System.exit(0);
     }
 
-    public static double weightedAvg(double trackSim, double tagSim) {
+    private static double weightedAvg(double trackSim, double tagSim) {
 
         double trackSimWeight = Constants.TRACK_SIM_WEIGHT;
         double tagSimWeight = 1.0 - trackSimWeight;
 
         double weightedAvg = (trackSimWeight * trackSim) + (tagSimWeight * tagSim);
-        //System.out.println(weightedAvg);
 
         return weightedAvg;
     }
 
-    //based on "Evaluating Hybrid Music Recommender Systems" by Hornung et al
-    //weighted sum of different cosine distance similarity functions on user's listening history
-    public static PriorityQueue<TrackScore>  recommendTracksForUser(HashMap<String, String> userHistory, int queueSize, boolean adjust_before, boolean adjust_after){
-        //String[] tracks = new String[numToRecommend];
+    public static PriorityQueue<TrackScore> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend,
+                                                                   boolean adjust_before, boolean adjust_after) {
+
         String trackIndexToUse;
-        if (adjust_before){
+
+        if (adjust_before) {
             trackIndexToUse = Constants.NORMALIZED_VECTOR2_INDEX;
-        } else{
+        } else {
             trackIndexToUse = Constants.TRACK_VECTORS_INDEX;
         }
 
-
+        int queueSize = numToRecommend;
         TrackScoreComparator tsc = new TrackScoreComparator();
-        PriorityQueue<TrackScore> queue = new PriorityQueue<TrackScore>(queueSize, tsc);
+        PriorityQueue<TrackScore> queue = new PriorityQueue<>(queueSize, tsc);
 
-        //get history
-        //HashMap<String, String> userHistory = ESHelpers.getHistoryForUser(username, historyNum);
-        ArrayList<Integer> trackVectorFromHistory;
-        ArrayList<Integer> tagVectorFromHistory;
-        Integer[] historyTrackArr = new Integer[Constants.num_users];
-        Integer[] historyTagArr = new Integer[Constants.num_users];
-
-        //loop for each track we have a vector for
+        // loop for each track we have a vector for
         Terms uniqueTracksTerms = ESHelpers.getTracksWhichHaveVectors();
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             String currentTrackId = b.getKeyAsString();
-            ArrayList<Integer> currentTrackVector;
-            ArrayList<Integer> currentTagVector;
-            Integer[] currentTrackArr = new Integer[Constants.num_users];
-            Integer[] currentTagArr = new Integer[Constants.num_users];
 
-            currentTrackVector = ESHelpers.getVector(trackIndexToUse, currentTrackId);
-            currentTrackArr = currentTrackVector.toArray(currentTrackArr);
-
-            currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
-            currentTagArr = currentTagVector.toArray(currentTagArr);
+            ArrayList<Integer> currentTrackVector = ESHelpers.getVector(trackIndexToUse, currentTrackId);
+            ArrayList<Integer> currentTagVector = ESHelpers.getVector(Constants.TAG_SIM_INDEX, currentTrackId);
 
             double similarity = 0.0;
             double tagSimilarity = 0.0;
 
-            //loop over tracks in history
-            for (int i=1; i<=userHistory.size(); i++) {
+            // loop over tracks in history
+            for (int i = 1; i <= userHistory.size(); i++) {
                 String historyTrackName = userHistory.get(Integer.toString(i));
 
-                trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse ,historyTrackName);
-                historyTrackArr = trackVectorFromHistory.toArray(historyTrackArr);
+                ArrayList<Integer> trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse, historyTrackName);
+                ArrayList<Integer> tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
 
-                tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX ,historyTrackName);
-                historyTagArr = tagVectorFromHistory.toArray(historyTagArr);
-
-                //similarity += trackSimilarity((Integer[]) currentTrackVector.toArray(), (Integer []) trackVectorFromHistory.toArray());
                 if (adjust_after) {
-                    similarity += adjustedTrackSimilarity(currentTrackArr, historyTrackArr);
-                } else{
-                    similarity += trackSimilarity(currentTrackArr, historyTrackArr);
+                    similarity += adjustedTrackSimilarity(currentTrackVector, trackVectorFromHistory);
+                } else {
+                    similarity += trackSimilarity(currentTrackVector, trackVectorFromHistory);
                 }
-                tagSimilarity += tagSimilarity(currentTagArr, historyTagArr);
+                tagSimilarity += tagSimilarity(currentTagVector, tagVectorFromHistory);
             }
-            //System.out.println("score for track "+currentTrackId+ " is "+similarity);
-            //System.out.println("TAG score for track "+currentTrackId+ " is "+tagSimilarity);
-            //trackScores.put(currentTrackId, weightedAvg(similarity, tagSimilarity));
-            TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
 
+            TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
             insertToSortedQueue(queue, queueSize, ts);
         }
 
@@ -172,53 +183,58 @@ public class Recommender {
     }
 
 
-    //similarity of two tracks = cosine distance of the user listening vectors
-    //subtract from each vector : "the average number of times the user j listened to a track"
-    //should we subtract here? or subtract when creating the vectors?
-    //adjust by track popularity - defined by listening total for all users for the track- this is sum of the vector
-    public static double trackSimilarity(Integer[] track1, Integer[] track2){
+    // TODO: subtract from each vector: "the average number of times the user j listened to a track"
+    // similarity of two tracks = cosine distance of the user listening vectors
+    // adjust by track popularity - defined by listening total for all users for the track- this is sum of the vector
+    public static double trackSimilarity(ArrayList<Integer> track1, ArrayList<Integer> track2) {
         return cosineDistance(track1, track2);
     }
 
-    public static double tagSimilarity(Integer[] track1, Integer[] track2){
+    public static double tagSimilarity(ArrayList<Integer> track1, ArrayList<Integer> track2) {
         return cosineDistance(track1, track2);
     }
 
-    //adjust for popularity by dividing by track2's sum - then make sure track is from history
-    public static double adjustedTrackSimilarity(Integer[] track1, Integer[] track2){
-        return cosineDistance(track1, track2)/sum(track2);
+    private static double adjustedTrackSimilarity(ArrayList<Integer> track1, ArrayList<Integer> track2) {
+        return cosineDistance(track1, track2) / sum(track2);
     }
 
-    public static double cosineDistance(Integer[]v1, Integer[]v2){
-        return dotProduct(v1,v2)/((Math.sqrt(dotProduct(v1,v1)))*(Math.sqrt(dotProduct(v2,v2))));
+    private static double cosineDistance(ArrayList<Integer> v1, ArrayList<Integer> v2) {
+        double denominator = Math.sqrt(dotProduct(v1, v1)) * Math.sqrt(dotProduct(v2, v2));
+        if (denominator == 0.0) {
+            throw new IllegalArgumentException("There is a vector that is all zeroes!");
+        }
+        return dotProduct(v1, v2) / denominator;
     }
 
-    public static int sum(Integer[] v){
+    public static int sum(ArrayList<Integer> v) {
         int s = 0;
-        for(int i=0; i<v.length; i++){
-            s +=v[i];
+        for (int i = 0; i < v.size(); i++) {
+            s += v.get(i);
         }
         return s;
     }
 
-    public static double dotProduct(Integer[]v1, Integer[]v2){
-        if (v1.length != v2.length){
-            throw new IllegalArgumentException("vector sizes don't match");
+    private static double dotProduct(ArrayList<Integer> v1, ArrayList<Integer> v2) {
+        if (v1.size() != v2.size()) {
+            throw new IllegalArgumentException("Vector sizes don't match!");
         }
-        double sum=0.0;
-        for (int i=0; i< v1.length; i++){
-            sum += v1[i]*v2[i];
+        double sum = 0.0;
+        for (int i = 0; i < v1.size(); i++) {
+            sum += v1.get(i) * v2.get(i);
         }
         return sum;
     }
 
-    public static void insertToSortedQueue(PriorityQueue<TrackScore> queue, int size, TrackScore ts) {
+    private static void insertToSortedQueue(PriorityQueue<TrackScore> queue, int size, TrackScore ts) {
 
         if (queue.size() < size) {
             queue.add(ts);
         } else {
             double scoreToAdd = ts.getScore();
-            double lowestScore = queue.peek().getScore(); // peek the head of the queue
+            double lowestScore = 0; // peek the head of the queue
+            if (queue.peek() != null) {
+                lowestScore = queue.peek().getScore();
+            }
             if (scoreToAdd > lowestScore) {
                 queue.remove(); // remove head, which is the lowest score
                 queue.add(ts); // add new score

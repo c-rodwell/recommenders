@@ -46,8 +46,7 @@ public class TrackVectors {
                 userCount++;
             }
         }
-        */
-
+         */
         // Get all the usernames associated with each track
         int userCount = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
@@ -96,7 +95,7 @@ public class TrackVectors {
                 bulkRequest.add(new IndexRequest(Constants.TRACK_VECTORS_INDEX, Constants.TRACK_VECTORS_TYPE)
                         .source(esObj.toString(), XContentType.JSON));
 
-                int arr [] = biasEliminationBySD(playCountArr);
+                int arr[] = biasEliminationBySD(playCountArr);
 
                 JsonArray normVector = new JsonArray();
                 for (int playCount : arr) {
@@ -141,8 +140,8 @@ public class TrackVectors {
     }
 
     /**
-     * Eliminates the popularity bias by normalize the track vector
-     * using calculations based on sample standard deviation
+     * Eliminates the popularity bias by normalize the track vector using
+     * calculations based on sample standard deviation
      *
      * @param arr int array[]
      * @return int array[]
@@ -171,15 +170,22 @@ public class TrackVectors {
             }
             int sd = 0;
             try {
-                if (counter == 1)
+                if (counter == 1) {
                     counter++;  // to avoid unexpected division by zero
+                }
                 sd = (int) (Math.ceil(Math.sqrt((sumOfSquares / (counter - 1)))));
             } catch (ArithmeticException e) {
                 System.out.println("Division by zero " + e);
             }
+//            for (int i = 0; i < arr.length; i++) {
+//                if ((arr[i] != 0) && (arr[i] > 2 * sd)) {
+//                    arr[i] = arr[i] - 2 * sd;
+//                }
+//            }
+
             for (int i = 0; i < arr.length; i++) {
-                if ((arr[i] != 0) && (arr[i] > 2 * sd)) {
-                    arr[i] = arr[i] - 2 * sd;
+                if ((arr[i] != 0) && (arr[i] - avg > sd)) {
+                    arr[i] = (int)(arr[i] -  Math.round(1.5*sd));
                 }
             }
         }
