@@ -7,7 +7,6 @@ import java.util.PriorityQueue;
 
 public class Evaluator {
 
-    private static double popScore = 0.0;
 
     public static void main(String[] args) throws IOException {
 
@@ -19,9 +18,10 @@ public class Evaluator {
 
     }
 
-    private static double evaluate(int queueSize) {
+    private static double[] evaluate(int queueSize) {
 
         double count = 0.0;
+        double popCount = 0.0;
 
         String username = "killeroid"; // TODO: need to get a list of users we have data for
 
@@ -31,32 +31,37 @@ public class Evaluator {
             System.out.println("Track recommendations for history #" + i);
             HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
             if (history != null) {
-                Integer rank = resultRank(history, queueSize, false, false);
-                if (rank != -1) {
+                double[] rankAndPop = resultRank(history, queueSize, false, false);
+                if (rankAndPop[0] != -1.0) {
                     count += 1.0;
                 }
+                popCount += rankAndPop[1];
             }
         }
 
         double accuracy = count / (double) historysize;
+        double averagePop = popCount / (double) historysize;
 
-//        System.out.println("**********************************************");
-//        System.out.println("Accuracy = " + accuracy);
-        return accuracy;
+        System.out.println("**********************************************");
+        System.out.println("Accuracy = " + accuracy);
+        System.out.println("average Popularity = " + averagePop);
+        double[] output =  {accuracy, averagePop};
+        return output;
 
     }
 
     // hide one track in history and try to guess it
     // return the position in the ranking, or null if it was not in ranking
-    private static int resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before,
+    private static double[] resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before,
                                      boolean adjust_after) {
 
+        double popScore = 0.0;
         String hiddentrack = userHistory.remove(Integer.toString(userHistory.size())); // take out the last one from the history
         PriorityQueue<TrackScore> recommendations =
                 Recommender.recommendTracksForUser(hiddentrack, userHistory, queueSize, adjust_before, adjust_after);
 
-        int position = queueSize; // count backward since poll gives lowest score first
-        int retval = -1;
+        double position = (double) queueSize; // count backward since poll gives lowest score first
+        double retval = -1.0;
         while (!recommendations.isEmpty()){
             TrackScore t = recommendations.poll();
 
@@ -66,13 +71,14 @@ public class Evaluator {
             if (t.getTrackMid().equals(hiddentrack)){
                 retval = position;
             }
-            position--;
+            position -= 1.0;
         }
 
-        System.out.println("Popularity = " + popScore / queueSize);
+        popScore = popScore / (double) queueSize;
+        //System.out.println("Popularity = " + popScore / queueSize);
 
-        return retval;
-
+        double[] arr = {retval, popScore};
+        return arr;
     }
 
     private static double getPopularityScore(String trackMid) {
