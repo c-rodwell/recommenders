@@ -106,19 +106,6 @@ public class Recommender {
                 }
                 tagSimilarity += tagSimilarity(currentTagVector, tagVectorFromHistory);
 
-                if (hiddenTrack.equals(currentTrackId)) {
-                    if (hiddenTrack.equals(historyTrackName)) {
-                        System.out.println("Found hidden track : " + hiddenTrack);
-                        System.out.println(sim);
-                        System.out.println(Arrays.asList(currentTrackVector).toString());
-                        System.out.println(Arrays.asList(trackVectorFromHistory).toString());
-                    }
-                }
-
-            }
-
-            if (hiddenTrack.equals(currentTrackId)) {
-                System.out.println(similarity);
             }
 
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));

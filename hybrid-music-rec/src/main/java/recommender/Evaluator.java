@@ -7,66 +7,75 @@ import java.util.PriorityQueue;
 
 public class Evaluator {
 
+    private static double popScore = 0.0;
+
     public static void main(String[] args) throws IOException {
 
-        double popScore = 0.0;
-        double accuracy = evaluateAccuracy(100, popScore);
-
-        System.out.println("accuracy is " + accuracy);
+        evaluate(100);
 
         ESHelpers.close();
+
         System.exit(0);
 
     }
 
-    public static double evaluateAccuracy(int queueSize, double popScore) {
+    private static void evaluate(int queueSize) {
 
         double count = 0.0;
+
         String username = "killeroid"; // TODO: need to get a list of users we have data for
+
         int historysize = ESHelpers.getUserHistorySize(username);
-        int numOfHistToEval = 1;
-        for (int i = 1; i <= numOfHistToEval; i++) {
-            HashMap<String, String> history = ESHelpers.getHistoryForUser(username, 3);
-            Integer rank = resultRank(history, queueSize, false, false, popScore);
-            if (rank != null) {
-                count += 1.0;
+        for (int i = 1; i <= historysize; i++) {
+            System.out.println("**********************************************");
+            System.out.println("Track recommendations for history #" + i);
+            HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
+            if (history != null) {
+                Integer rank = resultRank(history, queueSize, false, false);
+                if (rank != -1) {
+                    count += 1.0;
+                }
             }
         }
+
         double accuracy = count / (double) historysize;
 
-        return accuracy;
+        System.out.println("**********************************************");
+        System.out.println("Accuracy = " + accuracy);
+
     }
 
     // hide one track in history and try to guess it
     // return the position in the ranking, or null if it was not in ranking
-    public static Integer resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before, boolean adjust_after, double popScore) {
+    private static int resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before,
+                                     boolean adjust_after) {
+
         String hiddentrack = userHistory.remove(Integer.toString(userHistory.size())); // take out the last one from the history
-        PriorityQueue<TrackScore> recommendations = Recommender.recommendTracksForUser(hiddentrack, userHistory, queueSize, adjust_before, adjust_after);
-        // System.out.println(recommendations.size());
-        Integer position = queueSize; // count backward since poll gives lowest score first
+        PriorityQueue<TrackScore> recommendations =
+                Recommender.recommendTracksForUser(hiddentrack, userHistory, queueSize, adjust_before, adjust_after);
+
+        int position = queueSize; // count backward since poll gives lowest score first
+        int retval = -1;
         while (!recommendations.isEmpty()){
             TrackScore t = recommendations.poll();
 
             popScore += getPopularityScore(t.getTrackMid());
-            // System.out.println(popScore);
+            System.out.println(t.toString());
 
             if (t.getTrackMid().equals(hiddentrack)){
-                System.out.println("Found hidden track: " + hiddentrack);
-                return position;
+                retval = position;
             }
             position--;
-
         }
 
-        System.out.println("popularity score is " + popScore / queueSize);
+        System.out.println("Popularity = " + popScore / queueSize);
 
-        return null;
+        return retval;
 
     }
 
-    public static double getPopularityScore(String trackMid) {
+    private static double getPopularityScore(String trackMid) {
 
-        // System.out.println("Here");
         ArrayList<Integer> vector = ESHelpers.getVector(Constants.TRACK_VECTORS_INDEX, trackMid);
         return (double) Recommender.sum(vector);
 
