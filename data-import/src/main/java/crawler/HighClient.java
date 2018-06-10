@@ -13,6 +13,11 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
 
+/**
+ *
+ * Elasticsearch Java REST High Client
+ *
+ */
 public class HighClient {
 
     private static final Logger LOG = Logger.getLogger(HighClient.class);

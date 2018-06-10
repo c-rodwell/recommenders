@@ -38,30 +38,26 @@ public class UserHistory {
             PaginatedResult<Track> recentTracksPage = User.getRecentTracks(username,1, Constants.RECENT_TRACKS_SIZE, Constants.LASTFM_APIKey);
             Iterator<Track> trackIter = recentTracksPage.iterator();
             for (int i=1; i<=Constants.HISTORIES_PER_USER; i++) {
-                // ArrayList<String> currentHistory = new ArrayList<String>();
                 JsonObject currentHistoryObj = new JsonObject();
                 for (int j=1; j<=Constants.HISTORY_SIZE; j++) {
-                    if (!trackIter.hasNext()){//out of tracks - how to handle it when user history is smaller than others?
-                        // System.out.println("user \""+username+"\" ran out of track history at history ="+i+", track = "+j);
+                    if (!trackIter.hasNext()){
                         break;
                     }
                     Track t = trackIter.next();
 
-                    //currentHistory.add(t.getMbid());
                     String mbid = t.getMbid();
-                    //only count non-blank mbid which exist in trackVectors. if all are blank, we should eventually hit the "trackIter is out" condition
+                    // only count non-blank mbid which exist in trackVectors. if all are blank, we should eventually hit the "trackIter is out" condition
                     if ((mbid.equals("")) || (!TrackVectorsHelper.isInTrackVectors(mbid))) {
-                        j--; //repeat this index so we get the same total number
+                        j--; // repeat this index so we get the same total number
                     }
                     else {
-                        currentHistoryObj.addProperty(Integer.toString(j), mbid); //use int -> string as key, will that be easy to retrieve?
+                        currentHistoryObj.addProperty(Integer.toString(j), mbid);
                     }
                 }
-                //userHistories.add(currentHistory);
+
                 userHistoriesObj.add(Integer.toString(i), currentHistoryObj);
             }
-            //save history for that user in ES (hashmap for now) - what structure should it go in?
-            //allUsersHistories.put(username,userHistories);
+
             JsonObject esObj = new JsonObject();
             esObj.addProperty("username", username);
             esObj.add("histories", userHistoriesObj);

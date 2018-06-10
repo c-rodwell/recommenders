@@ -5,13 +5,16 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 
+/**
+ *
+ * Elasticsearch helper methods for trackvectors index
+ *
+ */
 public class TrackVectorsHelper {
 
     public static final Logger LOG = Logger.getLogger(TrackVectorsHelper.class);
@@ -21,16 +24,6 @@ public class TrackVectorsHelper {
      */
     public static boolean isInTrackVectors(String trackMid) {
 
-        /**
-         * Example:
-         *  {
-         *       "query": {
-         *       "match_phrase": {
-         *           "track_mid": "bc3448ee-53bb-412a-99d6-ea6cc862928a"
-         *       }
-         *     }
-         *  }
-         */
         QueryBuilder queryBuilder = QueryBuilders.matchPhraseQuery("track_mid", trackMid);
         SearchRequest request = new SearchRequest(Constants.TRACK_VECTORS_INDEX);
         request.source(new SearchSourceBuilder().query(queryBuilder));

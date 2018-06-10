@@ -14,6 +14,11 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 
+/**
+ *
+ * Elasticsearch helper methods for the users index
+ *
+ */
 public class UsersHelper {
 
     private static final Logger LOG = Logger.getLogger(UsersHelper.class);

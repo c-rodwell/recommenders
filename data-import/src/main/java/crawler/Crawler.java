@@ -13,7 +13,6 @@ import com.socrata.model.soql.SoqlQuery;
 import com.sun.jersey.api.client.ClientResponse;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
-import old.CollectData;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -37,6 +36,9 @@ public class Crawler {
 
     private static JsonArray data = new JsonArray();
 
+    /**
+     * Crawls for user data using the Socrata API
+     */
     public static void crawlForUsers() {
 
         int offset = 0;
@@ -81,9 +83,12 @@ public class Crawler {
 
     }
 
+    /**
+     * Backup in case Socrata API fails for whatever reason
+     */
     private static void loadUsersFromFile() {
 
-        InputStream is = CollectData.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
+        InputStream is = Crawler.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
         JsonReader jsonReader = new JsonReader(new InputStreamReader(is));
 
         JsonParser parser = new JsonParser();
@@ -91,6 +96,9 @@ public class Crawler {
 
     }
 
+    /**
+     * Bulk insert into Elasticsearch
+     */
     private static void bulkInsert() {
 
         if (data.size() == 0) {
@@ -131,6 +139,9 @@ public class Crawler {
 
     }
 
+    /**
+     * Elasticsearch mapping
+     */
     public static Map<String, Object> getMapping() {
 
         Map<String, Object> usernameMap = new HashMap<>();

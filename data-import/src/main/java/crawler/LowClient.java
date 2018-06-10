@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ *
+ * Elasticsearch Java REST Low Client
+ *
+ */
 public class LowClient {
 
     private static final Logger LOG = Logger.getLogger(LowClient.class);

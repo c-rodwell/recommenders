@@ -111,13 +111,13 @@ public class Recommender {
                 System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
                 history.remove(lastTrackKey); // remove history from history list
 
-                PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser("", history, 10, false, false);
+                PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser(history, 10, false, false);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser("", history, 10, true, false);
+                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser("", history, 10, false, true);
+                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser("", history, 10, true, true);
+                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
 
             }
         }
@@ -136,7 +136,7 @@ public class Recommender {
         return weightedAvg;
     }
 
-    public static PriorityQueue<TrackScore> recommendTracksForUser(String hiddenTrack, HashMap<String, String> userHistory, int numToRecommend,
+    public static PriorityQueue<TrackScore> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend,
                                                                    boolean adjust_before, boolean adjust_after) {
 
         String trackIndexToUse;
@@ -184,14 +184,12 @@ public class Recommender {
             insertToSortedQueue(queue, queueSize, ts);
         }
 
-
         // Testing, print out sorted, bounded queue
         /*
         for (int i = 0; i < queueSize; i++) {
             System.out.println(queue.remove().toString());
         }
         */
-
 
         return queue;
     }

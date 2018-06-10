@@ -34,7 +34,7 @@ public class TagSimVectors {
             return;
         }
 
-        // HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
+        // top 20 vectors from last.fm
         HashMap<String, Integer> tagsMap = new HashMap<>();
         tagsMap.put("rock", 0);
         tagsMap.put("electronic", 1);
@@ -125,32 +125,9 @@ public class TagSimVectors {
 
     }
 
-    // Since we're using the overall top 20 tags, we don't need this method anymore
-    private static HashMap<String, Integer> collectTags(Terms uniqueTracksTerms) {
-
-        HashMap<String, Integer> tagsMap = new HashMap<>();
-
-        int index = 0;
-        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
-            String trackMid = b.getKeyAsString();
-            try {
-                String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
-                String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
-                Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
-                for (Tag t : topTags) {
-                    if (tagsMap.containsKey(t.getName())) {
-                        tagsMap.put(t.getName(), index);
-                    }
-                }
-            } catch (NullPointerException e) {
-                LOG.error("Unable to fetch track name and artist for track mid='" + trackMid + "'");
-            }
-        }
-
-        return tagsMap;
-
-    }
-
+    /**
+     * Checks if vector is all zeroes
+     */
     private static boolean isAllZeroes(ArrayList<Integer>  vector) {
 
         for (Integer v : vector) {
