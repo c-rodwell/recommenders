@@ -22,10 +22,12 @@ public class Recommender {
 
 
         //test cosines and similarity
+        //Integer[] v1= {0,0,1,2,3}; //new ArrayList(asList(0,0,1,2,3));
         ArrayList<Integer> v1 = new ArrayList(asList(0,0,1,2,3));
-        //Integer[] 3v1 = {0,0,3,6,9};
-        Integer[] v2 = new ArrayList(asList(3,4,0,0,0);
-        Integer[] v3 = new ArrayList(asList(1,1,1,3,2);
+        //Integer[] v2 = {3,4,0,0,0};
+        ArrayList<Integer> v2 =new ArrayList(asList(3,4,0,0,0));
+        //Integer[] v3 = {1,1,1,3,2};
+        ArrayList<Integer> v3 =new ArrayList(asList(1,1,1,3,2));
 
         System.out.println("|v1|^2 = "+dotProduct(v1, v1));
         System.out.println("|v2|^2 = "+dotProduct(v2, v2));
@@ -109,13 +111,13 @@ public class Recommender {
                 System.out.println("Hide " + history.get(lastTrackKey) + " from listening history #" + i);
                 history.remove(lastTrackKey); // remove history from history list
 
-                PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser(history, 10, false, false);
+                PriorityQueue<TrackScore> noAdjustScores = recommendTracksForUser("", history, 10, false, false);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser(history, 10, true, false);
+                PriorityQueue<TrackScore> AdjustBeforeScores = recommendTracksForUser("", history, 10, true, false);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser(history, 10, false, true);
+                PriorityQueue<TrackScore> AdjustAfterScores = recommendTracksForUser("", history, 10, false, true);
                 System.out.println("---------------------------------------");
-                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser(history, 10, true, true);
+                PriorityQueue<TrackScore> AdjustBeforeAndAfterScores = recommendTracksForUser("", history, 10, true, true);
 
             }
         }
@@ -134,7 +136,7 @@ public class Recommender {
         return weightedAvg;
     }
 
-    public static PriorityQueue<TrackScore> recommendTracksForUser(HashMap<String, String> userHistory, int numToRecommend,
+    public static PriorityQueue<TrackScore> recommendTracksForUser(String hiddenTrack, HashMap<String, String> userHistory, int numToRecommend,
                                                                    boolean adjust_before, boolean adjust_after) {
 
         String trackIndexToUse;
@@ -167,17 +169,29 @@ public class Recommender {
                 ArrayList<Integer> trackVectorFromHistory = ESHelpers.getVector(trackIndexToUse, historyTrackName);
                 ArrayList<Integer> tagVectorFromHistory = ESHelpers.getVector(Constants.TAG_SIM_INDEX, historyTrackName);
 
+                double sim = 0.0;
                 if (adjust_after) {
                     similarity += adjustedTrackSimilarity(currentTrackVector, trackVectorFromHistory);
                 } else {
-                    similarity += trackSimilarity(currentTrackVector, trackVectorFromHistory);
+                    sim = trackSimilarity(currentTrackVector, trackVectorFromHistory);
+                    similarity += sim;
                 }
                 tagSimilarity += tagSimilarity(currentTagVector, tagVectorFromHistory);
+
             }
 
             TrackScore ts = new TrackScore(currentTrackId, weightedAvg(similarity, tagSimilarity));
             insertToSortedQueue(queue, queueSize, ts);
         }
+
+
+        // Testing, print out sorted, bounded queue
+        /*
+        for (int i = 0; i < queueSize; i++) {
+            System.out.println(queue.remove().toString());
+        }
+        */
+
 
         return queue;
     }
