@@ -84,7 +84,7 @@ public class Recommender {
     }
 
     private static double adjustedTrackSimilarity(ArrayList<Integer> track1, ArrayList<Integer> track2) {
-        return cosineDistance(track1, track2) / sum(track2);
+        return cosineDistance(track1, track2) * (220.0 /(double) sum(track1));
     }
 
     private static double cosineDistance(ArrayList<Integer> v1, ArrayList<Integer> v2) {

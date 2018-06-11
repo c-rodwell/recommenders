@@ -10,7 +10,7 @@ public class Constants {
     public static final String USERS_INDEX = "users";
     public static final String TRACK_VECTORS_INDEX = "trackvectors";
     public static final String TAG_SIM_INDEX = "tag-sim";
-    public static final String HISTORY_INDEX = "userhistory";
+    public static final String HISTORY_INDEX = "userhistory4x25";
     public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
 
     // recommender params

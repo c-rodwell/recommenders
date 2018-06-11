@@ -46,10 +46,11 @@ public class Evaluator {
         System.out.println("---------------------------------------------------------------------------------------");
         System.out.println("History size: " + historysize);
 
-        double[] noAdjust = evaluate(username, numToRecommend, false, false, historysize);
-        double[] adjustBefore = evaluate(username, numToRecommend, true, false, historysize);
-        double[] adjustAfter = evaluate(username, numToRecommend, false, true, historysize);
-        double[] adjustBoth = evaluate(username, numToRecommend, true, true, historysize);
+        ArrayList<HashMap<String, String>> historySet = getHistories();
+        double[] noAdjust = evaluate(historySet, username, numToRecommend, false, false, historysize);
+        double[] adjustBefore = evaluate(historySet, username, numToRecommend, true, false, historysize);
+        double[] adjustAfter = evaluate(historySet, username, numToRecommend, false, true, historysize);
+        double[] adjustBoth = evaluate(historySet, username, numToRecommend, true, true, historysize);
         
         System.out.println("=======================================================================================");
         System.out.println("No adjustments: Accuracy = " + noAdjust[0] + ", AVG Popularity = " + noAdjust[1]);
@@ -68,9 +69,44 @@ public class Evaluator {
 
     }
 
+    public static ArrayList<HashMap<String, String>> getHistories() {
+        String[] usernames = {
+                "amifamousnow",
+                "gsnedders",
+                "beefigursk",
+                "paularms",
+                "rockstr",
+                "blue_shirt_2",
+                "jmullan",
+                "rob",
+                "halr9000",
+                "jablko",
+                "fightingfriends"};
+        int historiesPerUser = 1;
+        ArrayList<HashMap<String, String>> histories = new ArrayList<>();
+        for (String username: usernames){
+            for (int i=1; i<=historiesPerUser; i++){
+                HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
+                histories.add(history);
+            }
+        }
+        return histories;
+    }
 
-    private static double[] evaluate(String username, int queueSize, boolean adjust_before, boolean adjust_after, int historysize) {
-    	
+    public static String historyString(HashMap<String, String> history){
+        String s = "";
+        for(String mbid: history.values()){
+            s = s + mbid + " , ";
+        }
+        return s;
+    }
+
+    private static double[] evaluate(ArrayList<HashMap<String, String>> historiesList, String username, int queueSize, boolean adjust_before, boolean adjust_after, int historysize) {
+
+        double count = 0.0;
+        double popCount = 0.0;
+        double totalRank = 0.0;
+        
     	String type = "NO ADJUST";
     	if (adjust_before && !adjust_after) {
     		type = "BEFORE";
@@ -80,27 +116,27 @@ public class Evaluator {
     		type = "BEFORE AND AFTER";
     	}
 
-        double count = 0.0;
-        double popCount = 0.0;
-
-        for (int i = 1; i <= historysize; i++) {
+    	int i = 1;
+        for (HashMap<String, String> history: historiesList) {
         	System.out.println("***************************************************************************************");
             System.out.println("Track recommendations based on history #" + i + ":");
             System.out.println("Adjustment Type: " + type);
             System.out.println("***************************************************************************************");
-            HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
             if (history != null) {
                 double[] rankAndPop = resultRank(history, queueSize, adjust_before, adjust_after);
                 if (rankAndPop[0] != -1.0) {
                     count += 1.0;
+                    totalRank += rankAndPop[0];
                 }
                 popCount += rankAndPop[1];
             }
+            i++;
         }
 
         double accuracy = count / (double) historysize;
         double averagePop = popCount / (double) historysize;
-        double[] output =  {accuracy, averagePop};
+        double averageRank = totalRank / (double) historysize;
+		double[] output =  {accuracy, averagePop, averageRank};
         
         return output;
 
@@ -109,19 +145,22 @@ public class Evaluator {
     private static double[] resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before,
                                      boolean adjust_after) {
 
+        HashMap<String, String > historyCopy = (HashMap) userHistory.clone();
         double popScore = 0.0;
-        String hiddentrack = userHistory.remove(Integer.toString(userHistory.size())); // take out the last one from the history
+        
+		String hiddentrack = historyCopy.remove(Integer.toString(historyCopy.size())); // take out the last one from the history
         System.out.println("Hidden Track: " + hiddentrack);
         PriorityQueue<TrackScore> recommendations =
                 Recommender.recommendTracksForUser(userHistory, queueSize, adjust_before, adjust_after);
 
         double position = (double) queueSize; // count backward since poll gives lowest score first
         double retval = -1.0;
+        int i = 1;
         while (!recommendations.isEmpty()){
             TrackScore t = recommendations.poll();
 
             popScore += getPopularityScore(t.getTrackMid());
-            System.out.print(t.toString());
+            System.out.print(i + ": " + t.toString());
 
             if (t.getTrackMid().equals(hiddentrack)){
                 retval = position;
@@ -129,6 +168,7 @@ public class Evaluator {
             }
             System.out.println();
             position -= 1.0;
+            i++;
         }
 
         popScore = popScore / (double) queueSize;
