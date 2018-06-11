@@ -18,6 +18,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,6 +56,8 @@ public class Crawler {
             crawl(offset, remainder);
             bulkInsert();
         }
+        
+        // saveToFile();
 
     }
 
@@ -165,6 +168,17 @@ public class Crawler {
 
         return mapping;
 
+    }
+    
+    private static void saveToFile() {
+    	
+		// try-with-resources statement based on post comment below :)
+		try (FileWriter file = new FileWriter("src/main/resources/users.json")) {
+			file.write(data.toString());
+		} catch(IOException e) {
+			LOG.error("Failed to save users JSON to file");
+		}
+    	
     }
 
 }

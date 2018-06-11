@@ -15,8 +15,8 @@ public class Main {
         // Check for program arguments
         if (args.length > 1) {
             LOG.info("Invalid args length.");
-            LOG.info("usage: java -jar crawler.jar <number_of_users>");
-            LOG.info("number_of_users: MAX = 500000, MIN = 100, DEFAULT = 100");
+            LOG.info("usage: crawler <number_of_users>");
+            LOG.info("number_of_users: MAX = 100000, MIN = 10, DEFAULT = 10");
             System.exit(-1);
         }
 
@@ -25,14 +25,14 @@ public class Main {
                 Constants.NUM_OF_USERS = Integer.parseInt(args[0]);
                 if (Constants.NUM_OF_USERS > 500000 || Constants.NUM_OF_USERS < 100) {
                     LOG.info("Invalid arg.");
-                    LOG.info("usage : java -jar crawler.jar <number_of_users>");
-                    LOG.info("number_of_users (optional) : MAX = 500000, MIN = 100, DEFAULT = 100");
+                    LOG.info("usage : crawler <number_of_users>");
+                    LOG.info("number_of_users (optional) : MAX = 100000, MIN = 10, DEFAULT = 10");
                     System.exit(-1);
                 }
             } catch(Exception e) {
                 LOG.info("Invalid arg.");
-                LOG.info("usage : java -jar crawler.jar <number_of_users>");
-                LOG.info("number_of_users (optional) : MAX = 500000, MIN = 100, DEFAULT = 100");
+                LOG.info("usage : crawler <number_of_users>");
+                LOG.info("number_of_users (optional) : MAX = 100000, MIN = 10, DEFAULT = 10");
                 System.exit(-1);
             }
         }

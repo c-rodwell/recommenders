@@ -74,9 +74,14 @@ public class TagSimVectors {
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
 
                 ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
+                int i = 0;
                 for (Tag t : topTags) {
                     if (tagsMap.containsKey(t.getName())) {
                         vector.set(tagsMap.get(t.getName()), t.getCount());
+                    }
+                    i++;
+                    if (i == 5) {
+                    	break;
                     }
                 }
 
