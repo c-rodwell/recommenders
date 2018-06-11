@@ -14,37 +14,55 @@ public class Evaluator {
     public static void main(String[] args) throws IOException {
     	
         // Check for program arguments
-        if (args.length > 1 || args.length == 0) {
+        if (args.length > 2 || args.length == 0) {
             LOG.info("Invalid args length.");
-            LOG.info("usage: recommender <username>");
+            LOG.info("usage: recommender <username> <number_of_recommendations>");
+            LOG.info("<number_of_recommendations> (optional) : MAX = 100, MIN = 10, DEFAULT = 100");
             System.exit(-1);
         }
 
-        if (args.length == 1) {
+        int numToRecommend = 100;
+        if (args.length >= 1 && args.length <= 2) {
         	if (!ESHelpers.isInUsers(args[0])) {
         		LOG.info("User does not exist.");
         		System.exit(0);
+        	}
+        	if (args.length == 2) {
+	        	try {
+	        		numToRecommend = Integer.parseInt(args[1]);
+	                if (numToRecommend > 100 || numToRecommend < 10) {
+	                    LOG.info("Invalid arg.");
+	                    LOG.info("usage: recommender <username> <number_of_recommendations>");
+	                    LOG.info("number_of_recommendations (optional) : MAX = 100, MIN = 10, DEFAULT = 100");
+	                    System.exit(-1);
+	                }
+	            } catch(Exception e) {
+	                LOG.info("Invalid arg.");
+	                LOG.info("usage: recommender <username> <number_of_recommendations>");
+	                LOG.info("number_of_recommendations (optional) : MAX = 100, MIN = 10, DEFAULT = 100");
+	                System.exit(-1);
+	            }
         	}
         }
 
         String username = args[0];
         System.out.println("User: " + username);
+        System.out.println("Number of tracks to recommend: " + numToRecommend);
 
-        double[] noAdjust = evaluate(username, 100, false, false);
+        double[] noAdjust = evaluate(username, numToRecommend, false, false);
+        double[] adjustBefore = evaluate(username, numToRecommend, true, false);
+        double[] adjustAfter = evaluate(username, numToRecommend, false, true);
+        double[] adjustBoth = evaluate(username, numToRecommend, true, true);
+        
+        System.out.println("=======================================================================================");
         System.out.println("No adjustments: Accuracy = " + noAdjust[0] + ", AVG Popularity = " + noAdjust[1]);
-        System.out.println("***************************************************************************************");
-
-        double[] adjustBefore = evaluate(username, 100, true, false);
+        System.out.println("=======================================================================================");
         System.out.println("Adjust before CF: Accuracy = " + adjustBefore[0] + ", AVG popularity = " + adjustBefore[1]);
-        System.out.println("***************************************************************************************");
-
-        double[] adjustAfter = evaluate(username, 100, false, true);
+        System.out.println("=======================================================================================");
         System.out.println("Adjust after CF: Accuracy = " + adjustAfter[0] + ", AVG popularity = " + adjustAfter[1]);
-        System.out.println("***************************************************************************************");
-
-        double[] adjustBoth = evaluate(username, 100, true, true);
+        System.out.println("=======================================================================================");
         System.out.println("Adjust before and after: Accuracy = " + adjustBoth[0] + ", AVG popularity = " + adjustBoth[1]);
-        System.out.println("***************************************************************************************");
+        System.out.println("=======================================================================================");
 
         ESHelpers.close();
 
@@ -60,10 +78,12 @@ public class Evaluator {
         double popCount = 0.0;
 
         int historysize = ESHelpers.getUserHistorySize(username);
+        System.out.println("---------------------------------------------------------------------------------------");
         System.out.println("History size: " + historysize);
         for (int i = 1; i <= historysize; i++) {
         	System.out.println("***************************************************************************************");
-            System.out.println("Track recommendations based on history #" + i);
+            System.out.println("Track recommendations based on history #" + i + ":");
+            System.out.println("***************************************************************************************");
             HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
             if (history != null) {
                 double[] rankAndPop = resultRank(history, queueSize, adjust_before, adjust_after);
@@ -82,8 +102,6 @@ public class Evaluator {
 
     }
 
-    // hide one track in history and try to guess it
-    // return the position in the ranking, or null if it was not in ranking
     private static double[] resultRank(HashMap<String, String> userHistory, int queueSize, boolean adjust_before,
                                      boolean adjust_after) {
 
