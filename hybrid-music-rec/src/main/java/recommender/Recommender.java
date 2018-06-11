@@ -4,12 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
-import org.apache.log4j.Logger;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 public class Recommender {
-
-    private static final Logger LOG = Logger.getLogger(Recommender.class);
 
     private static double weightedAvg(double trackSim, double tagSim) {
 

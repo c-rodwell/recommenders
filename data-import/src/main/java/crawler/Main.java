@@ -12,33 +12,29 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        // Check for program arguments
         if (args.length > 1) {
-            LOG.info("Invalid args length.");
-            LOG.info("usage: crawler <number_of_users>");
-            LOG.info("number_of_users: MAX = 100000, MIN = 10, DEFAULT = 10");
+        	System.out.println("Error: invalid args length.");
+        	printUsageMsg();
             System.exit(-1);
         }
 
         if (args.length == 1) {
             try {
                 Constants.NUM_OF_USERS = Integer.parseInt(args[0]);
-                if (Constants.NUM_OF_USERS > 500000 || Constants.NUM_OF_USERS < 100) {
-                    LOG.info("Invalid arg.");
-                    LOG.info("usage : crawler <number_of_users>");
-                    LOG.info("number_of_users (optional) : MAX = 100000, MIN = 10, DEFAULT = 10");
+                if (Constants.NUM_OF_USERS > Constants.NUM_OF_USERS_MAX || Constants.NUM_OF_USERS < Constants.NUM_OF_USERS_MIN) {
+                    System.out.println("Error: invalid arg value.");
+                    printUsageMsg();
                     System.exit(-1);
                 }
             } catch(Exception e) {
-                LOG.info("Invalid arg.");
-                LOG.info("usage : crawler <number_of_users>");
-                LOG.info("number_of_users (optional) : MAX = 100000, MIN = 10, DEFAULT = 10");
+            	System.out.println("Error: invalid arg value.");
+            	printUsageMsg();
                 System.exit(-1);
             }
         }
 
         // Begin collecting data and inserting them to Elasticsearch
-        LOG.info("Begin data import program.");
+        LOG.info("Begin crawler program.");
         final long startTime = System.currentTimeMillis();
 
         // This disables the last-fm loggings
@@ -64,10 +60,10 @@ public class Main {
         HighClient.getInstance().close();
         LowClient.getInstance().close();
 
-        LOG.info("Data import done.");
+        LOG.info("Crawler program done.");
 
         final long endTime = System.currentTimeMillis();
-        LOG.info("Total data import program execution time: " + ((endTime - startTime) / 1000) + " seconds.");
+        LOG.info("Finished after: " + ((endTime - startTime) / 1000) + " seconds.");
 
         System.exit(0);
 
@@ -133,6 +129,11 @@ public class Main {
         HighClient.getInstance().createIndex(Constants.HISTORY_INDEX);
 
         UserHistory.makeUserHistories();
+    }
+    
+    private static void printUsageMsg() {
+    	System.out.println("usage : crawler <number_of_users>");
+        System.out.println("number_of_users (optional) : MAX = " + Constants.NUM_OF_USERS_MAX  + ", MIN = " + Constants.NUM_OF_USERS_MIN + ", DEFAULT = 10");
     }
 
 }

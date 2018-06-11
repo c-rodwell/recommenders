@@ -14,6 +14,8 @@ public class Constants {
     public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
 
     // recommender params
+    public static final int NUM_TO_REC_MIN = 5;
+    public static final int NUM_TO_REC_MAX = 100;
     public static final double TRACK_SIM_WEIGHT = 0.6;
 
 }

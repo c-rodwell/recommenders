@@ -64,6 +64,7 @@ public class TagSimVectors {
         }
 
         LOG.info("Begin bulk insert of tag similarity vectors to ES...");
+        LOG.info("This takes the longest... please wait");
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             // prepare bulk request to ES
             BulkRequest bulkRequest = new BulkRequest();
@@ -74,14 +75,12 @@ public class TagSimVectors {
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
 
                 ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
+                Iterator<Tag> it = topTags.iterator();
                 int i = 0;
-                for (Tag t : topTags) {
-                    if (tagsMap.containsKey(t.getName())) {
+                while (it.hasNext() && i < 5) {
+                	Tag t = it.next();
+                	if (tagsMap.containsKey(t.getName())) {
                         vector.set(tagsMap.get(t.getName()), t.getCount());
-                    }
-                    i++;
-                    if (i == 5) {
-                    	break;
                     }
                 }
 
