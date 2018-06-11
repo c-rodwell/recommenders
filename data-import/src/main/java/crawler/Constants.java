@@ -15,7 +15,7 @@ public class Constants {
     public static final String TAG_SIM_INDEX = "tag-sim";
     public static final String TAG_SIM_TYPE = "tagvecs";
 
-    public static final String HISTORY_INDEX = "userhistory";
+    public static final String HISTORY_INDEX = "userhistory4x25";
     public static final String HISTORY_TYPE = "history";
 
     public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
@@ -32,7 +32,7 @@ public class Constants {
     public static final String USERS_FILE = "users-small.json";
 
     public static int RECENT_TRACKS_SIZE = 1000;
-    public static int HISTORIES_PER_USER = 10;
-    public static int HISTORY_SIZE = 10;
+    public static int HISTORIES_PER_USER = 25;
+    public static int HISTORY_SIZE = 4;
 
 }
