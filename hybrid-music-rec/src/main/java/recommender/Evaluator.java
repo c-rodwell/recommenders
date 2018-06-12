@@ -54,11 +54,10 @@ public class Evaluator {
 
         double[] noAdjust = evaluate(username, numToRecommend, false, false, historysize);
         double[] adjustBoth = evaluate(username, numToRecommend, true, true, historysize);
-        /*
         double[] adjustBefore = evaluate(username, numToRecommend, true, false, historysize);
         double[] adjustAfter = evaluate(username, numToRecommend, false, true, historysize);
 
-
+        /*
         System.out.println("=======================================================================================");
         System.out.println("No adjustments: Accuracy = " + noAdjust[0] + ", AVG Popularity = " + noAdjust[1]);
         System.out.println("=======================================================================================");
@@ -126,10 +125,12 @@ public class Evaluator {
 
         double position = (double) queueSize; // count backward since poll gives lowest score first
         double retval = -1.0;
+        int i = 1;
         while (!recommendations.isEmpty()){
             TrackScore t = recommendations.poll();
-            System.out.print(t.toString());
+            System.out.print(i + ") " + t.toString());
             System.out.println();
+            i++;
             /*
             popScore += getPopularityScore(t.getTrackMid());
             if (t.getTrackMid().equals(hiddentrack)){
