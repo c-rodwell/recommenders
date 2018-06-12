@@ -15,24 +15,27 @@ public class Constants {
     public static final String TAG_SIM_INDEX = "tag-sim";
     public static final String TAG_SIM_TYPE = "tagvecs";
 
-    public static final String HISTORY_INDEX = "userhistory4x25";
+    public static final String HISTORY_INDEX = "userhistory";
     public static final String HISTORY_TYPE = "history";
 
     public static final String NORMALIZED_VECTOR2_INDEX = "normalized-vector-2";
     public static final String NORMALIZED_VECTOR_2_TYPE = "norm-vector-2";
 
+    public static final int SODA_MAX = 1000;
+    public static final int ES_MAX = 10000;
+
     public static final String SOCRATA_APIKey = "55KiTqMCKtty3TJqWO5VBq5aG";
     public static final String LASTFM_APIKey = "685a323d182636518e80a296f620c8a2";
 
     public static final String SOCRATA_Resource = "5vvd-truf";
-    public static final int NUM_OF_USERS = 100;
-    public static final int SODA_MAX = 50000;
-    public static final int ES_MAX = 10000;
+    public static final String USERS_FILE = "users-small.json"; // back up in case Socrata API fails
 
-    public static final String USERS_FILE = "users-small.json";
+    public static int NUM_OF_USERS = 10; // can be changed with program args
+    public static int NUM_OF_USERS_MAX = 10000;
+    public static int NUM_OF_USERS_MIN = 2;
 
     public static int RECENT_TRACKS_SIZE = 1000;
-    public static int HISTORIES_PER_USER = 25;
-    public static int HISTORY_SIZE = 4;
+    public static int HISTORIES_PER_USER = 15;
+    public static int HISTORY_SIZE = 10;
 
 }

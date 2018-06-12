@@ -13,12 +13,12 @@ import com.socrata.model.soql.SoqlQuery;
 import com.sun.jersey.api.client.ClientResponse;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.User;
-import old.CollectData;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,6 +37,9 @@ public class Crawler {
 
     private static JsonArray data = new JsonArray();
 
+    /**
+     * Crawls for user data using the Socrata API
+     */
     public static void crawlForUsers() {
 
         int offset = 0;
@@ -53,6 +56,8 @@ public class Crawler {
             crawl(offset, remainder);
             bulkInsert();
         }
+
+        saveToFile();
 
     }
 
@@ -81,9 +86,12 @@ public class Crawler {
 
     }
 
+    /**
+     * Backup in case Socrata API fails for whatever reason
+     */
     private static void loadUsersFromFile() {
 
-        InputStream is = CollectData.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
+        InputStream is = Crawler.class.getClassLoader().getResourceAsStream(Constants.USERS_FILE);
         JsonReader jsonReader = new JsonReader(new InputStreamReader(is));
 
         JsonParser parser = new JsonParser();
@@ -91,6 +99,9 @@ public class Crawler {
 
     }
 
+    /**
+     * Bulk insert into Elasticsearch
+     */
     private static void bulkInsert() {
 
         if (data.size() == 0) {
@@ -131,6 +142,9 @@ public class Crawler {
 
     }
 
+    /**
+     * Elasticsearch mapping
+     */
     public static Map<String, Object> getMapping() {
 
         Map<String, Object> usernameMap = new HashMap<>();
@@ -153,6 +167,17 @@ public class Crawler {
         mapping.put("properties", propertiesMap);
 
         return mapping;
+
+    }
+
+    private static void saveToFile() {
+
+        // try-with-resources statement based on post comment below :)
+        try (FileWriter file = new FileWriter("users.json")) {
+            file.write(data.toString());
+        } catch(IOException e) {
+            LOG.error("Failed to save users JSON to file");
+        }
 
     }
 

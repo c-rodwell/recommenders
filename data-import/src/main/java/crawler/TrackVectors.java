@@ -16,15 +16,22 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ *
+ * Creates the track vectors and the normalized track vectors and inserts the vectors to Elasticsearch
+ *
+ */
 public class TrackVectors {
 
     private static final Logger LOG = Logger.getLogger(TrackVectors.class);
 
-    public static void createTrackSimVectors() throws IOException {
+    /**
+     * Creates the track feature vectors and bulk inserts them to ES
+     */
+    public static void createTrackSimVectors() {
 
         LOG.info("Creating track similarity vectors...");
 
@@ -32,21 +39,6 @@ public class TrackVectors {
 
         HashMap<String, Integer> usersToInts = new HashMap<>();
 
-        /*
-        Terms uniqueUsersTerms = UsersHelper.getUniqueUsers();
-
-        int userCount = 0;
-        for (Terms.Bucket b : uniqueUsersTerms.getBuckets()) {
-            String username = b.getKeyAsString();
-            if (username.equalsIgnoreCase("x-diva")) {
-                System.out.println("FUCK");
-            }
-            if (!usersToInts.containsKey(username)) {
-                usersToInts.put(username, userCount);
-                userCount++;
-            }
-        }
-         */
         // Get all the usernames associated with each track
         int userCount = 0;
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
@@ -122,6 +114,9 @@ public class TrackVectors {
 
     }
 
+    /**
+     * Get the play counts of the tracks
+     */
     private static SearchHits getPlayCountsOfTracks(String trackMid) {
 
         QueryBuilder queryBuilder = QueryBuilders.matchQuery("track_mid", trackMid);
@@ -156,12 +151,11 @@ public class TrackVectors {
             if (arr[i] != 0) {
                 flag = true;
                 sum += arr[i];
-                counter++;  //number of non-zero entries in the vector
+                counter++;  // number of non-zero entries in the vector
             }
         }
         if (flag) {
             double avg = sum / counter;
-            // int avg = (int) (Math.round(average));
 
             for (int i = 0; i < arr.length; i++) {
                 if (arr[i] != 0) {
@@ -177,11 +171,6 @@ public class TrackVectors {
             } catch (ArithmeticException e) {
                 System.out.println("Division by zero " + e);
             }
-//            for (int i = 0; i < arr.length; i++) {
-//                if ((arr[i] != 0) && (arr[i] > 2 * sd)) {
-//                    arr[i] = arr[i] - 2 * sd;
-//                }
-//            }
 
             for (int i = 0; i < arr.length; i++) {
                 if ((arr[i] != 0) && (arr[i] - avg > sd)) {
@@ -193,6 +182,9 @@ public class TrackVectors {
         return arr;
     }
 
+    /**
+     * Elasticsearch mapping
+     */
     public static Map<String, Object> getMapping() {
 
         Map<String, Object> trackmidMap = new HashMap<>();

@@ -34,7 +34,7 @@ public class TagSimVectors {
             return;
         }
 
-        // HashMap<String, Integer> tagsMap = collectTags(uniqueTracksTerms);
+        // top 20 vectors from last.fm
         HashMap<String, Integer> tagsMap = new HashMap<>();
         tagsMap.put("rock", 0);
         tagsMap.put("electronic", 1);
@@ -64,6 +64,7 @@ public class TagSimVectors {
         }
 
         LOG.info("Begin bulk insert of tag similarity vectors to ES...");
+        LOG.info("This takes the longest... please wait");
         for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
             // prepare bulk request to ES
             BulkRequest bulkRequest = new BulkRequest();
@@ -74,7 +75,10 @@ public class TagSimVectors {
                 Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
 
                 ArrayList<Integer> vector = new ArrayList<>(Collections.nCopies(tagsMap.size(), 0));
-                for (Tag t : topTags) {
+                Iterator<Tag> it = topTags.iterator();
+                int i = 0;
+                while (it.hasNext() && i < 5) {
+                    Tag t = it.next();
                     if (tagsMap.containsKey(t.getName())) {
                         vector.set(tagsMap.get(t.getName()), t.getCount());
                     }
@@ -125,32 +129,9 @@ public class TagSimVectors {
 
     }
 
-    // Since we're using the overall top 20 tags, we don't need this method anymore
-    private static HashMap<String, Integer> collectTags(Terms uniqueTracksTerms) {
-
-        HashMap<String, Integer> tagsMap = new HashMap<>();
-
-        int index = 0;
-        for (Terms.Bucket b : uniqueTracksTerms.getBuckets()) {
-            String trackMid = b.getKeyAsString();
-            try {
-                String artist = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_artist").toString();
-                String trackName = UsersHelper.getHit(trackMid).getSourceAsMap().get("track_name").toString();
-                Collection<Tag> topTags = Track.getTopTags(artist, trackName, Constants.LASTFM_APIKey);
-                for (Tag t : topTags) {
-                    if (tagsMap.containsKey(t.getName())) {
-                        tagsMap.put(t.getName(), index);
-                    }
-                }
-            } catch (NullPointerException e) {
-                LOG.error("Unable to fetch track name and artist for track mid='" + trackMid + "'");
-            }
-        }
-
-        return tagsMap;
-
-    }
-
+    /**
+     * Checks if vector is all zeroes
+     */
     private static boolean isAllZeroes(ArrayList<Integer>  vector) {
 
         for (Integer v : vector) {
