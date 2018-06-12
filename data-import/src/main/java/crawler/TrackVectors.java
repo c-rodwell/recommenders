@@ -173,8 +173,8 @@ public class TrackVectors {
             }
 
             for (int i = 0; i < arr.length; i++) {
-                if ((arr[i] != 0) && (arr[i] - avg > sd)) {
-                    arr[i] = (int)(arr[i] -  Math.round(1.5*sd));
+                if ((arr[i] != 0) && (arr[i] - avg > 1.5*sd)) {
+                    arr[i] = (int)(arr[i] -  Math.round(2*sd));
                 }
             }
         }
