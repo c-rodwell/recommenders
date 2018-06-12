@@ -41,16 +41,24 @@ public class Evaluator {
         String username = args[0];
         System.out.println("User: " + username);
         System.out.println("Number of tracks to recommend: " + numToRecommend);
-        
+
         int historysize = ESHelpers.getUserHistorySize(username);
+        /*
         System.out.println("---------------------------------------------------------------------------------------");
         System.out.println("History size: " + historysize);
+        */
+        if (historysize == 0) {
+            System.out.println("This user does not have any history data!");
+            System.exit(0);
+        }
 
         double[] noAdjust = evaluate(username, numToRecommend, false, false, historysize);
+        double[] adjustBoth = evaluate(username, numToRecommend, true, true, historysize);
+        /*
         double[] adjustBefore = evaluate(username, numToRecommend, true, false, historysize);
         double[] adjustAfter = evaluate(username, numToRecommend, false, true, historysize);
-        double[] adjustBoth = evaluate(username, numToRecommend, true, true, historysize);
-        
+
+
         System.out.println("=======================================================================================");
         System.out.println("No adjustments: Accuracy = " + noAdjust[0] + ", AVG Popularity = " + noAdjust[1]);
         System.out.println("=======================================================================================");
@@ -60,6 +68,7 @@ public class Evaluator {
         System.out.println("=======================================================================================");
         System.out.println("Adjust before and after: Accuracy = " + adjustBoth[0] + ", AVG popularity = " + adjustBoth[1]);
         System.out.println("=======================================================================================");
+        */
 
         ESHelpers.close();
 
@@ -71,21 +80,21 @@ public class Evaluator {
 
     private static double[] evaluate(String username, int queueSize, boolean adjust_before, boolean adjust_after, int historysize) {
     	
-    	String type = "NO ADJUST";
+    	String type = "NO ADJUSTMENTS";
     	if (adjust_before && !adjust_after) {
-    		type = "BEFORE";
+    		type = "BEFORE CF";
     	} else if (adjust_after && !adjust_before) {
-    		type = "AFTER";
+    		type = "AFTER CF";
     	} else if (adjust_before && adjust_after) {
-    		type = "BEFORE AND AFTER";
+    		type = "BEFORE AND AFTER CF";
     	}
 
         double count = 0.0;
         double popCount = 0.0;
 
-        for (int i = 1; i <= historysize; i++) {
+        for (int i = 1; i <= 1; i++) {
         	System.out.println("***************************************************************************************");
-            System.out.println("Track recommendations based on history #" + i + ":");
+            System.out.println("Track recommendations based on history:");
             System.out.println("Adjustment Type: " + type);
             System.out.println("***************************************************************************************");
             HashMap<String, String> history = ESHelpers.getHistoryForUser(username, i);
@@ -111,7 +120,7 @@ public class Evaluator {
 
         double popScore = 0.0;
         String hiddentrack = userHistory.remove(Integer.toString(userHistory.size())); // take out the last one from the history
-        System.out.println("Hidden Track: " + hiddentrack);
+        // System.out.println("Hidden Track: " + hiddentrack);
         PriorityQueue<TrackScore> recommendations =
                 Recommender.recommendTracksForUser(userHistory, queueSize, adjust_before, adjust_after);
 
@@ -119,19 +128,20 @@ public class Evaluator {
         double retval = -1.0;
         while (!recommendations.isEmpty()){
             TrackScore t = recommendations.poll();
-
-            popScore += getPopularityScore(t.getTrackMid());
             System.out.print(t.toString());
-
+            System.out.println();
+            /*
+            popScore += getPopularityScore(t.getTrackMid());
             if (t.getTrackMid().equals(hiddentrack)){
                 retval = position;
-                System.out.print(" HIT");
+                // System.out.print(" HIT");
             }
-            System.out.println();
             position -= 1.0;
+            */
+
         }
 
-        popScore = popScore / (double) queueSize;
+        // popScore = popScore / (double) queueSize;
 
         double[] arr = {retval, popScore};
         return arr;
